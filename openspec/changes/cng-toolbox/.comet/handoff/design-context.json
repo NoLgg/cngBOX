@@ -1,0 +1,20 @@
+{
+  "change": "cng-toolbox",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "93a6b1ea1a1438c413a1edce5567989578788eeb659c99745eecbdcdc7fe41e2",
+  "files": [
+    { "path": "openspec/changes/cng-toolbox/proposal.md", "sha256": "4d77bf578acdcf7008a17a60a6adcfdea847634885cd46d2f0f2bd5eb3075378" },
+    { "path": "openspec/changes/cng-toolbox/design.md", "sha256": "5c252553286869e165147c88898713403721235d1b66eeedb06bd83a91c514f0" },
+    { "path": "openspec/changes/cng-toolbox/tasks.md", "sha256": "1cbdb3b7c44fd9f8ae390634fb7b02fa91c176c1bcbd1876f6ff95a1b608731e" },
+    { "path": "openspec/changes/cng-toolbox/specs/app-shell/spec.md", "sha256": "213251f0accf865fc70ab04dcf66b8c2264bc1c769cc1273c0612f9e6e50a49e" },
+    { "path": "openspec/changes/cng-toolbox/specs/clipboard-history/spec.md", "sha256": "6ef59c0ce8a9ab52c6ed9c8f6bbcb914f6d5e96478d6f611b14246b0d21a7fbd" },
+    { "path": "openspec/changes/cng-toolbox/specs/clip-to-screen/spec.md", "sha256": "53899a36d2aacf2457ffb1ce1d4fccea50e927758c020acbf71758170db4bebc" },
+    { "path": "openspec/changes/cng-toolbox/specs/color-picker/spec.md", "sha256": "c689a1d1ec6f122f526f7c94b9c14fec565043055b9cf8f4dff6dfe944056104" },
+    { "path": "openspec/changes/cng-toolbox/specs/pin-to-top/spec.md", "sha256": "1a985c6cc65f6df2db7393312fbbb539d5db381d5824d7bf1c187590641ac00f" },
+    { "path": "openspec/changes/cng-toolbox/specs/screen-capture/spec.md", "sha256": "30c2363f9977dbe4738847ffac829c4bb6d07183205edd9936b30db3501b162c" },
+    { "path": "openspec/changes/cng-toolbox/specs/settings/spec.md", "sha256": "f53823f1b5f8a57b310b292f1d4c02c8ab7fd5945dfdecf0cadfbb7dcc1114b5" }
+  ]
+}
