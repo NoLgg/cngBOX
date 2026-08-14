@@ -1,0 +1,12 @@
+﻿# 草泥鸽工具箱 — 运行与开发依赖
+# 安装：pip install -r requirements-dev.txt
+# （qthotkey 在 PyPI 不存在，热键采用 Win32 RegisterHotKey 实现，无需额外依赖）
+
+# 运行时
+PySide6>=6.6
+Pillow>=10.0
+pywin32>=306; platform_system == "Windows"
+
+# 开发/测试
+pytest>=8.0
+pytest-qt>=4.4
