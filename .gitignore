@@ -1,21 +1,37 @@
-# Python
+﻿# ============ Python ============
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 .eggs/
+*.egg
 build/
 dist/
 *.spec.bak
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
 
-# Virtual environments
+# ============ 虚拟环境 ============
 .venv/
 venv/
 env/
+ENV/
 
-# IDE
+# ============ IDE / 编辑器 ============
 .idea/
 .vscode/
 *.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-# Runtime data
+# ============ 运行时数据 ============
 ~/.cng-toolbox/
+runtime/
+logs/
+*.log
