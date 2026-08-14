@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -221,13 +221,14 @@ class PinWindow(QWidget):
         self.update()
 
 
-class PinManager:
+class PinManager(QObject):
     """贴图统一管理。"""
 
     limit_reached = Signal()
     copied = Signal(object)  # QPixmap（贴图被复制时发出，供防回环）
 
-    def __init__(self, config: ConfigStore) -> None:
+    def __init__(self, config: ConfigStore, parent: QObject | None = None) -> None:
+        super().__init__(parent)
         self._config = config
         self._pins: dict[int, PinWindow] = {}
         self._next_id = 1

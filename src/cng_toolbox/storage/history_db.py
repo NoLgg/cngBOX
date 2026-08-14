@@ -107,7 +107,7 @@ class HistoryDB:
             f"""
             SELECT id, type, content_hash, text_content, image_path, pinned, created_at
             FROM entries {where}
-            ORDER BY pinned DESC, created_at DESC
+            ORDER BY pinned DESC, created_at DESC, id DESC
             LIMIT ?
             """,
             (*params, limit),
@@ -154,7 +154,7 @@ class HistoryDB:
               AND id NOT IN (
                   SELECT id FROM entries
                   WHERE pinned = 0
-                  ORDER BY created_at DESC
+                  ORDER BY created_at DESC, id DESC
                   LIMIT ?
               )
             """,

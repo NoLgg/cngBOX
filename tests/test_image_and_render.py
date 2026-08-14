@@ -38,12 +38,12 @@ def test_rgb_to_hex() -> None:
     assert rgb_to_hex(45, 212, 191) == "#2DD4BF"
 
 
-def test_render_text_pixmap() -> None:
+def test_render_text_pixmap(qapp) -> None:
     pm = render_text_pixmap("hello 草泥鸽")
     assert not pm.isNull()
     assert pm.width() > 0 and pm.height() > 0
 
 
-def test_render_text_pixmap_multiline() -> None:
+def test_render_text_pixmap_multiline(qapp) -> None:
     pm = render_text_pixmap("line1\nline2\n\nline4")
     assert not pm.isNull()

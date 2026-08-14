@@ -70,7 +70,7 @@ def parse_sequence(sequence: str | None) -> tuple[int, int] | None:
             key = part
     if key is None:
         return None
-    vk = _VK_MAP.get(key)
+    vk = _VK_MAP.get(key.upper())
     if vk is None:
         return None
     return (mods | MOD_NOREPEAT, vk)

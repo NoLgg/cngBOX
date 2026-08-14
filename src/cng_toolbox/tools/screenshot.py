@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import QRect, Qt, Signal
+from PySide6.QtCore import QObject, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QWidget
 
@@ -128,13 +128,14 @@ class ScreenshotOverlay(QWidget):
             )
 
 
-class ScreenshotTool:
+class ScreenshotTool(QObject):
     """截图工具入口。"""
 
     completed = Signal(object)  # ScreenshotResult
     cancelled = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
+        super().__init__(parent)
         self._overlay: ScreenshotOverlay | None = None
 
     def start(self) -> None:
