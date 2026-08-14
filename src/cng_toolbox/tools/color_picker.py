@@ -41,6 +41,7 @@ class ColorPickerOverlay(QWidget):
             | Qt.WindowType.Tool,
         )
         self._desktop = desktop
+        self._desktop_image = desktop.toImage()  # 缓存，避免每帧转换
         self._geometry = geometry
         self._mouse_pos = geometry.center()
         self.setGeometry(geometry)
@@ -66,11 +67,11 @@ class ColorPickerOverlay(QWidget):
             self.close()
 
     def _pixel_rgb(self, pos) -> tuple[int, int, int]:
-        x = pos.x() - self._geometry.x()
-        y = pos.y() - self._geometry.y()
-        x = max(0, min(x, self._desktop.width() - 1))
-        y = max(0, min(y, self._desktop.height() - 1))
-        color = self._desktop.toImage().pixelColor(x, y)
+        # overlay 局部坐标与 desktop pixmap 坐标一一对应
+        # （overlay 原点 = virtualGeometry.topLeft = desktop (0,0)）
+        x = max(0, min(pos.x(), self._desktop.width() - 1))
+        y = max(0, min(pos.y(), self._desktop.height() - 1))
+        color = self._desktop_image.pixelColor(x, y)
         return color.red(), color.green(), color.blue()
 
     # -- 绘制 ------------------------------------------------------------------
@@ -92,8 +93,8 @@ class ColorPickerOverlay(QWidget):
         painter.setBrush(QColor(26, 29, 36))
         painter.drawRect(center)
         sample = self._desktop.copy(
-            pos.x() - MAGNIFY_RADIUS - self._geometry.x(),
-            pos.y() - MAGNIFY_RADIUS - self._geometry.y(),
+            pos.x() - MAGNIFY_RADIUS,
+            pos.y() - MAGNIFY_RADIUS,
             MAGNIFY_RADIUS * 2, MAGNIFY_RADIUS * 2,
         ).scaled(MAGNIFY_SIZE, MAGNIFY_SIZE)
         painter.drawPixmap(center, sample)

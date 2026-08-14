@@ -69,12 +69,12 @@ class HotkeyEdit(QLineEdit):
         key = event.key()
         if key in (
             Qt.Key.Key_Control, Qt.Key.Key_Alt, Qt.Key.Key_Shift,
-            Qt.Key.Key_Meta, Qt.Key.Key_unknown,
+            Qt.Key.Key_Meta,
         ):
             return  # 仅修饰键，忽略
         text = QKeySequence(key).toString()
         if not text or text.startswith("Key"):
-            return
+            return  # 未知键
         self.setText("+".join(mods + [text]))
         self.clearFocus()
 

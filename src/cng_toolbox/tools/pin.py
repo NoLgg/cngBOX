@@ -30,13 +30,12 @@ from PySide6.QtWidgets import (
 from cng_toolbox.config import PIN_LIMIT, PIN_SCALE_MAX, PIN_SCALE_MIN
 from cng_toolbox.shell.config_store import ConfigStore
 
-_BORDER_PRESETS = ("none", "thin", "thick", "dashed", "glow", "rounded")
-
 
 class PinWindow(QWidget):
     """一张置顶贴图。"""
 
     closed = Signal(object)  # self
+    copied = Signal(object)  # QPixmap（内容被复制到剪贴板时发出）
 
     def __init__(
         self,
@@ -195,6 +194,7 @@ class PinWindow(QWidget):
 
     def copy_to_clipboard(self) -> None:
         QApplication.clipboard().setPixmap(self._content)
+        self.copied.emit(self._content)
 
     def toggle_click_through(self, checked: bool | None = None) -> None:
         if checked is None:
@@ -225,6 +225,7 @@ class PinManager:
     """贴图统一管理。"""
 
     limit_reached = Signal()
+    copied = Signal(object)  # QPixmap（贴图被复制时发出，供防回环）
 
     def __init__(self, config: ConfigStore) -> None:
         self._config = config
@@ -244,6 +245,7 @@ class PinManager:
             return None
         pin = PinWindow(pixmap, self._config, self, title=title)
         pin.closed.connect(self._on_pin_closed)
+        pin.copied.connect(self.copied)
         pin_id = self._next_id
         self._next_id += 1
         self._pins[pin_id] = pin

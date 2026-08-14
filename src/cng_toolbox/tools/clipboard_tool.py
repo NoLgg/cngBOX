@@ -90,11 +90,13 @@ class HistoryPanel(QDialog):
         image_store: ImageStore,
         config: ConfigStore,
         parent: QWidget | None = None,
+        on_self_copy=None,
     ) -> None:
         super().__init__(parent)
         self._db = db
         self._images = image_store
         self._config = config
+        self._on_self_copy = on_self_copy  # 回调：自身复制标记（防回环）
         self.setWindowTitle("粘贴板 — 剪贴板历史")
         self.resize(520, 620)
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
@@ -202,10 +204,14 @@ class HistoryPanel(QDialog):
     def _copy_entry(self, entry: dict) -> None:
         if entry["type"] == "text":
             QApplication.clipboard().setText(entry["text_content"] or "")
+            if self._on_self_copy:
+                self._on_self_copy(entry)
         else:
             pm = self._images.load_pixmap(entry["content_hash"])
             if pm:
                 QApplication.clipboard().setPixmap(pm)
+                if self._on_self_copy:
+                    self._on_self_copy(entry)
         self.copied.emit()
 
     def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
@@ -345,6 +351,12 @@ class ClipboardTool(QObject):
     def mark_self_write(self, content_hash: str | None) -> None:
         self._last_self_write = (time.monotonic(), content_hash)
 
+    def mark_self_write_text(self, text: str) -> None:
+        self.mark_self_write(_hash_text(text))
+
+    def mark_self_write_pixmap(self, pixmap) -> None:
+        self.mark_self_write(hash_bytes(image_bytes(pixmap.toImage())))
+
     # -- 贴屏 ----------------------------------------------------------------------
 
     def clip_to_screen(self) -> None:
@@ -379,13 +391,22 @@ class ClipboardTool(QObject):
     def show_panel(self) -> None:
         if self._panel is None:
             self._panel = HistoryPanel(
-                self._db, self._images, self._config
+                self._db, self._images, self._config,
+                on_self_copy=self._mark_entry_self_write,
             )
             self._panel.clip_to_screen.connect(self.clip_entry_to_screen)
         self._panel.refresh()
         self._panel.show()
         self._panel.raise_()
         self._panel.activateWindow()
+
+    def _mark_entry_self_write(self, entry: dict) -> None:
+        if entry["type"] == "text":
+            self.mark_self_write_text(entry["text_content"] or "")
+        else:
+            pm = self._images.load_pixmap(entry["content_hash"])
+            if pm:
+                self.mark_self_write_pixmap(pm)
 
 
 def image_bytes(image: QImage) -> bytes:

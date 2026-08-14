@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QLockFile, Qt
+from PySide6.QtCore import QLockFile
 from PySide6.QtWidgets import QApplication
 
 from cng_toolbox import APP_NAME, __version__
@@ -126,6 +126,10 @@ class CaoNiGeApp:
             lambda: self.tray.notify("贴屏", "剪贴板为空，无法贴屏")
         )
 
+        # 防回环：自身写入剪贴板（取色复制、贴图复制）不进入历史
+        self.color_picker.picked.connect(self.clipboard.mark_self_write_text)
+        self.pins.copied.connect(self.clipboard.mark_self_write_pixmap)
+
         # 配置变更 → 主题/工具开关联动
         self.config.changed.connect(self._on_config_changed)
 
@@ -144,8 +148,6 @@ class CaoNiGeApp:
     def _on_screenshot_done(self, result) -> None:
         # 默认：生成贴图 + 图片复制到剪贴板
         self.pins.create(result.pixmap, title="截图贴图")
-        from PySide6.QtWidgets import QApplication
-
         QApplication.clipboard().setPixmap(result.pixmap)
 
     def _on_config_changed(self, keys: list[str]) -> None:

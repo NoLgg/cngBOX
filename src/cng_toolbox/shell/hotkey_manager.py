@@ -142,9 +142,12 @@ class Win32HotkeyEngine(QAbstractNativeEventFilter, QObject):
 
     def nativeEventFilter(self, event_type: bytes, message) -> bool:
         try:
-            msg = ctypes.cast(
-                int(message), ctypes.POINTER(wintypes.MSG)
-            ).contents
+            # PySide6 6.5+: message 为 int；旧版本为 voidptr，均可转 int
+            msg_ptr = int(message)
+        except (TypeError, ValueError):
+            return False
+        try:
+            msg = ctypes.cast(msg_ptr, ctypes.POINTER(wintypes.MSG)).contents
         except (TypeError, ValueError):
             return False
         if msg.message == WM_HOTKEY:
