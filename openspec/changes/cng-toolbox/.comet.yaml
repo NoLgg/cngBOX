@@ -1,12 +1,12 @@
 workflow: full
 phase: build
-build_mode: null
+build_mode: direct
 build_pause: null
-isolation: null
+isolation: branch
 verify_mode: null
 base_ref: null
 design_doc: docs/superpowers/specs/2026-08-14-cng-toolbox-design.md
-plan: null
+plan: docs/superpowers/plans/2026-08-14-cng-toolbox.md
 verify_result: pending
 verification_report: null
 branch_status: pending
@@ -15,3 +15,4 @@ verified_at: null
 archived: false
 handoff_context: openspec/changes/cng-toolbox/.comet/handoff/design-context.json
 handoff_hash: 93a6b1ea1a1438c413a1edce5567989578788eeb659c99745eecbdcdc7fe41e2
+direct_override: true
