@@ -12,7 +12,7 @@ verification_report: docs/superpowers/reports/2026-08-14-cng-toolbox-verify.md
 branch_status: handled
 created_at: 2026-08-14
 verified_at: 2026-08-15
-archived: false
+archived: true
 handoff_context: openspec/changes/cng-toolbox/.comet/handoff/design-context.json
 handoff_hash: 93a6b1ea1a1438c413a1edce5567989578788eeb659c99745eecbdcdc7fe41e2
 direct_override: true

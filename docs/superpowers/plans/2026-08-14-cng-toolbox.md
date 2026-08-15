@@ -2,6 +2,7 @@
 change: cng-toolbox
 design-doc: docs/superpowers/specs/2026-08-14-cng-toolbox-design.md
 base-ref: 2044a68342b7fdc8b1803ef688743a6a4f892ca6
+archived-with: 2026-08-15-cng-toolbox
 ---
 
 # 草泥鸽工具箱 — 实施计划

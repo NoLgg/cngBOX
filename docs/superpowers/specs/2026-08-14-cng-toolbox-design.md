@@ -2,6 +2,8 @@
 comet_change: cng-toolbox
 role: technical-design
 canonical_spec: openspec
+archived-with: 2026-08-15-cng-toolbox
+status: final
 ---
 
 # 草泥鸽工具箱 — 技术设计文档
