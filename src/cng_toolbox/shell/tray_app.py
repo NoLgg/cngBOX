@@ -6,27 +6,11 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QObject, Signal
-from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
-
-def make_tray_icon() -> QIcon:
-    """程序化生成托盘图标：圆底 + 鸽子 emoji。"""
-    pixmap = QPixmap(64, 64)
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setBrush(QColor("#2dd4bf"))
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.drawEllipse(2, 2, 60, 60)
-    painter.setPen(QColor("#0b1220"))
-    font = painter.font()
-    font.setPixelSize(40)
-    painter.setFont(font)
-    painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "🐦")
-    painter.end()
-    return QIcon(pixmap)
+from cng_toolbox.resources import load_icon
 
 
 class TrayApp(QObject):
@@ -41,29 +25,29 @@ class TrayApp(QObject):
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._tray = QSystemTrayIcon(make_tray_icon(), self)
+        self._tray = QSystemTrayIcon(load_icon("icon-tray"), self)
         self._tray.setToolTip("草泥鸽工具箱")
 
         menu = QMenu()
-        act_panel = QAction("📦 显示主面板", self)
+        act_panel = QAction(load_icon("icon-app"), "显示主面板", self)
         act_panel.triggered.connect(self.show_panel)
         menu.addAction(act_panel)
         menu.addSeparator()
 
-        act_shot = QAction("📷 截图置顶", self)
+        act_shot = QAction(load_icon("icon-tool-screenshot"), "截图置顶", self)
         act_shot.triggered.connect(self.invoke_screenshot)
         menu.addAction(act_shot)
 
-        act_clip = QAction("📋 粘贴板", self)
+        act_clip = QAction(load_icon("icon-tool-clipboard"), "粘贴板", self)
         act_clip.triggered.connect(self.invoke_clipboard)
         menu.addAction(act_clip)
 
-        act_color = QAction("🎨 取色器", self)
+        act_color = QAction(load_icon("icon-tool-colorpicker"), "取色器", self)
         act_color.triggered.connect(self.invoke_color_picker)
         menu.addAction(act_color)
 
         menu.addSeparator()
-        act_close_pins = QAction("🗑️ 关闭全部贴图", self)
+        act_close_pins = QAction(load_icon("icon-pin"), "关闭全部贴图", self)
         act_close_pins.triggered.connect(self.close_all_pins)
         menu.addAction(act_close_pins)
 

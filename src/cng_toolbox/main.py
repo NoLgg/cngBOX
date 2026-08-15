@@ -14,6 +14,7 @@ from PySide6.QtCore import QLockFile
 from PySide6.QtWidgets import QApplication
 
 from cng_toolbox import APP_NAME, __version__
+from cng_toolbox.resources import load_icon
 from cng_toolbox.shell.config_store import ConfigStore, default_app_dir
 from cng_toolbox.shell.hotkey_manager import HotkeyManager
 from cng_toolbox.shell.main_window import MainWindow
@@ -68,7 +69,7 @@ class CaoNiGeApp:
                 tool_id="screenshot",
                 name="截图置顶",
                 description="框选屏幕区域，截图即钉在屏幕上",
-                icon="📷",
+                icon="icon-tool-screenshot",
                 hotkey_id="screenshot",
                 invoke=self.screenshot.start,
             )
@@ -78,7 +79,7 @@ class CaoNiGeApp:
                 tool_id="clipboard",
                 name="粘贴板",
                 description="剪贴板历史 · 贴屏 · 搜索固定",
-                icon="📋",
+                icon="icon-tool-clipboard",
                 hotkey_id="clipboard_panel",
                 invoke=self.clipboard.show_panel,
             )
@@ -88,7 +89,7 @@ class CaoNiGeApp:
                 tool_id="color_picker",
                 name="取色器",
                 description="屏幕取色，复制 HEX/RGB",
-                icon="🎨",
+                icon="icon-tool-colorpicker",
                 hotkey_id="color_picker",
                 invoke=self.color_picker.start,
             )
@@ -238,6 +239,8 @@ def main() -> int:
     qapp = QApplication(sys.argv)
     qapp.setApplicationName(APP_NAME)
     qapp.setApplicationVersion(__version__)
+    # 应用图标（任务栏/窗口）
+    qapp.setWindowIcon(load_icon("icon-app"))
 
     # 单实例锁
     lock = QLockFile(str(app_dir / "singleton.lock"))

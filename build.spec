@@ -8,12 +8,18 @@
 """
 
 import os
+from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 
-datas = []
+# 资源打包：assets 目录随 exe 内嵌（_MEIPASS/assets）
+_assets = Path("assets")
+datas = [
+    (str(_assets / "icons"), "assets/icons"),
+    (str(_assets / "icon-app.ico"), "assets"),
+]
 binaries = []
 hiddenimports = collect_submodules("cng_toolbox")
 
@@ -52,6 +58,9 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+# exe 图标（应用图标）
+_ico = str(_assets / "icon-app.ico")
+
 exe = EXE(
     pyz,
     a.scripts,
@@ -63,6 +72,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,
+    icon=_ico,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -81,8 +91,7 @@ coll = COLLECT(
     name="草泥鸽工具箱",
 )
 
-# 单文件模式：注释掉 COLLECT，改用 EXE 全量打包
-# 如需单文件（--onefile），使用以下配置：
+# 单文件模式（--onefile）
 if os.environ.get("CNG_ONEFILE"):
     exe = EXE(
         pyz,
@@ -97,6 +106,7 @@ if os.environ.get("CNG_ONEFILE"):
         strip=False,
         upx=False,
         console=False,
+        icon=_ico,
         disable_windowed_traceback=False,
         argv_emulation=False,
         target_arch=None,
