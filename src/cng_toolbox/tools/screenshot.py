@@ -19,7 +19,12 @@ from cng_toolbox.config import MIN_SELECTION
 
 
 def grab_virtual_desktop() -> QPixmap:
-    """抓取全部显示器组成的虚拟桌面，返回拼接 QPixmap。"""
+    """抓取全部显示器组成的虚拟桌面，返回拼接 QPixmap。
+
+    注意：逐屏用 grabWindow(0)（无偏移参数）整屏抓取再按虚拟桌面
+    坐标平铺——带偏移的 grabWindow(0, x, y, ...) 在副屏负坐标 /
+    混合 DPI 环境下会返回黑图（已知 Qt 行为）。
+    """
     screens = QGuiApplication.screens()
     if not screens:
         return QPixmap()
@@ -29,8 +34,17 @@ def grab_virtual_desktop() -> QPixmap:
     painter = QPainter(canvas)
     for screen in screens:
         g = screen.geometry()
-        shot = screen.grabWindow(0, g.x(), g.y(), g.width(), g.height())
-        painter.drawPixmap(g.x() - geometry.x(), g.y() - geometry.y(), shot)
+        shot = screen.grabWindow(0)  # 整屏抓取（Qt 内部处理该屏 DPI）
+        if shot.isNull():
+            continue
+        # 平铺到虚拟桌面对应位置（虚拟桌面可能从负坐标开始）
+        target = QRect(
+            g.x() - geometry.x(),
+            g.y() - geometry.y(),
+            g.width(),
+            g.height(),
+        )
+        painter.drawPixmap(target, shot)
     painter.end()
     return canvas
 

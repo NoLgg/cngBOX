@@ -153,10 +153,108 @@ class TitleBar(QWidget):
         self._drag_pos = None
 
 
+class ResizeHandle(QWidget):
+    """窗口边缘拖拽调整大小的透明手柄（无边框窗口标准做法）。"""
+
+    def __init__(self, win: QMainWindow, dirs: set[str], thickness: int = 7) -> None:
+        super().__init__(win)
+        self._win = win
+        self._dirs = dirs
+        self._thickness = thickness
+        self._start_geo = None
+        self._start_pos = None
+        self.setMouseTracking(True)
+        self.setCursor(self._cursor_for_dirs(dirs))
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.hide()
+
+    @staticmethod
+    def _cursor_for_dirs(dirs: set[str]) -> Qt.CursorShape:
+        if "n" in dirs and "w" in dirs:
+            return Qt.CursorShape.SizeFDiagCursor
+        if "n" in dirs and "e" in dirs:
+            return Qt.CursorShape.SizeBDiagCursor
+        if "s" in dirs and "w" in dirs:
+            return Qt.CursorShape.SizeBDiagCursor
+        if "s" in dirs and "e" in dirs:
+            return Qt.CursorShape.SizeFDiagCursor
+        if "w" in dirs or "e" in dirs:
+            return Qt.CursorShape.SizeHorCursor
+        if "n" in dirs or "s" in dirs:
+            return Qt.CursorShape.SizeVerCursor
+        return Qt.CursorShape.ArrowCursor
+
+    def place(self) -> None:
+        """按窗口当前尺寸摆放（角落优先，避免重叠）。"""
+        w, h = self._win.width(), self._win.height()
+        t = self._thickness
+        d = self._dirs
+        if d == {"n", "w"}:
+            self.setGeometry(0, 0, t + 6, t + 6)
+        elif d == {"n", "e"}:
+            self.setGeometry(w - t - 6, 0, t + 6, t + 6)
+        elif d == {"s", "w"}:
+            self.setGeometry(0, h - t - 6, t + 6, t + 6)
+        elif d == {"s", "e"}:
+            self.setGeometry(w - t - 6, h - t - 6, t + 6, t + 6)
+        elif d == {"n"}:
+            self.setGeometry(t, 0, w - 2 * t, t)
+        elif d == {"s"}:
+            self.setGeometry(t, h - t, w - 2 * t, t)
+        elif d == {"w"}:
+            self.setGeometry(0, t, t, h - 2 * t)
+        elif d == {"e"}:
+            self.setGeometry(w - t, t, t, h - 2 * t)
+
+    def show_for(self, win_w: int, win_h: int) -> None:
+        """窗口显示/尺寸变化时摆放并显示。"""
+        self.place()
+        self.show()
+        self.raise_()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._start_geo = self._win.geometry()
+            self._start_pos = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._start_geo is None or self._start_pos is None:
+            return
+        dx = event.globalPosition().toPoint().x() - self._start_pos.x()
+        dy = event.globalPosition().toPoint().y() - self._start_pos.y()
+        from PySide6.QtCore import QRect
+
+        rect = QRect(self._start_geo)
+        if "w" in self._dirs:
+            rect.setLeft(min(rect.right() - MainWindow.MIN_W, rect.left() + dx))
+        if "e" in self._dirs:
+            rect.setRight(max(rect.left() + MainWindow.MIN_W, rect.right() + dx))
+        if "n" in self._dirs:
+            rect.setTop(min(rect.bottom() - MainWindow.MIN_H, rect.top() + dy))
+        if "s" in self._dirs:
+            rect.setBottom(max(rect.top() + MainWindow.MIN_H, rect.bottom() + dy))
+        self._win.setGeometry(rect)
+        # 窗口变化后重新摆放手柄
+        self.place()
+        for h in self._win._resize_handles:
+            if h is not self:
+                h.place()
+
+    def mouseReleaseEvent(self, event) -> None:
+        self._start_geo = None
+        self._start_pos = None
+
+
 class MainWindow(QMainWindow):
-    """工具箱主面板（手绘便当盒）。"""
+    """工具箱主面板（手绘便当盒，支持边缘拖拽调整大小 + 跨屏 DPI 自适应）。"""
 
     tool_invoked = Signal(str)  # tool_id
+
+    # 边缘拖拽热区宽度（px）
+    RESIZE_EDGE = 7
+    # 最小窗口尺寸（保证布局不挤爆）
+    MIN_W = 760
+    MIN_H = 540
 
     def __init__(self, registry: ToolRegistry, hotkey_texts: dict[str, str]) -> None:
         super().__init__()
@@ -170,14 +268,57 @@ class MainWindow(QMainWindow):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("草泥鸽工具箱")
+        self.setMinimumSize(self.MIN_W, self.MIN_H)
         self.resize(860, 620)
+
+        # 边缘拖拽 resize：8 个透明手柄
+        self._resize_handles: list[ResizeHandle] = []
+        for dirs in ({"n"}, {"s"}, {"w"}, {"e"},
+                     {"n", "w"}, {"n", "e"}, {"s", "w"}, {"s", "e"}):
+            self._resize_handles.append(ResizeHandle(self, dirs))
+
+        # 跨屏 DPI 自适应基准
+        self._base_dpr = self.devicePixelRatioF() or 1.0
+
         self._build()
 
     def showEvent(self, event) -> None:
-        """显示时置顶 + 淡入动画。"""
+        """显示时置顶 + 淡入动画 + 挂接屏幕切换监听。"""
         super().showEvent(event)
         self.raise_()
         self.activateWindow()
+        if self.windowHandle() is not None:
+            self.windowHandle().screenChanged.connect(self._on_screen_changed)
+        # 摆放并显示边缘调整手柄
+        for h in self._resize_handles:
+            h.show_for(self.width(), self.height())
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        for h in self._resize_handles:
+            h.place()
+
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        for h in self._resize_handles:
+            h.hide()
+
+    # -- 跨屏 DPI 自适应 -----------------------------------------------------------
+
+    def _on_screen_changed(self, screen) -> None:
+        """窗口拖到不同 DPI 的屏幕时，按 DPR 比例缩放窗口尺寸，保持观感一致。"""
+        if screen is None:
+            return
+        new_dpr = screen.devicePixelRatio()
+        if abs(new_dpr - self._base_dpr) < 0.01:
+            return
+        scale = new_dpr / self._base_dpr
+        new_w = max(self.MIN_W, int(self.width() * scale))
+        new_h = max(self.MIN_H, int(self.height() * scale))
+        self.resize(new_w, new_h)
+        self._base_dpr = new_dpr
+
+    # -- 边缘拖拽调整大小（由 ResizeHandle 手柄处理，见类定义） ----------------------
 
     def _build(self) -> None:
         # 外层容器：纸张背景 + 墨线边框 + 贴纸阴影（模拟窗口边框）
