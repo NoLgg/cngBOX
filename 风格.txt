@@ -1,0 +1,426 @@
+STYLEKIT_STYLE_REFERENCE
+style_name: 铅笔手绘风
+style_slug: sketch-style
+style_source: /styles/sketch-style
+
+# Hard Prompt
+
+## 什么时候用
+当你希望 AI 严格按风格规则生成代码时使用。它是生产界面最稳的默认选择。
+
+## 怎么用
+- 把完整提示词复制到 ChatGPT、Claude、Cursor 或其他编码助手。
+- 在提示词后追加具体产品、页面或组件需求。
+- 生成后按禁止项和交互状态检查，确认没有风格漂移。
+
+请严格遵守以下风格规则并保持一致性，禁止风格漂移。
+
+## 执行要求
+
+- 优先保证风格一致性，其次再做创意延展。
+- 遇到冲突时以禁止项为最高优先级。
+- 输出前自检：颜色、排版、间距、交互是否仍属于该风格。
+
+## Style Rules
+
+# Sketch Style (铅笔手绘风) Design System
+
+> 模拟铅笔手绘的设计风格，不规则线条边框、纸张纹理背景、手写字体感、素描阴影和涂鸦装饰，传达亲切温暖的手工质感。
+
+## 核心理念
+
+Sketch Style 是一种模拟手绘铅笔素描的设计风格，通过不规则的线条、纸张纹理和手写感元素，为数字界面注入温暖的手工质感。
+
+核心理念：
+- 手工感：线条和形状不追求完美对齐，保留手绘的不规则感
+- 纸张质感：使用暖色调米色背景模拟素描本纸张
+- 铅笔线条：边框使用不均匀的手绘风格线条
+- 素描阴影：使用交叉线条（cross-hatching）模拟阴影效果
+
+设计原则：
+- 视觉一致性：所有组件必须遵循统一的视觉语言，从色彩到字体到间距保持谐调
+- 层次分明：通过颜色深浅、字号大小、留白空间建立清晰的信息层级
+- 交互反馈：每个可交互元素都必须有明确的 hover、active、focus 状态反馈
+- 响应式适配：设计必须在移动端、平板、桌面端上保持一致的体验
+- 无障碍性：确保色彩对比度符合 WCAG 2.1 AA 标准，所有交互元素可键盘访问
+
+---
+
+## Token 字典（精确 Class 映射）
+
+### 边框
+```
+宽度: border-2
+颜色: border-[#2c2c2c]
+圆角: rounded-sm
+```
+
+### 阴影
+```
+小:   shadow-[1px_1px_0px_rgba(44,44,44,0.3)]
+中:   shadow-[2px_2px_0px_rgba(44,44,44,0.3)]
+大:   shadow-[3px_3px_0px_rgba(44,44,44,0.3)]
+悬停: hover:shadow-[2px_2px_0px_rgba(44,44,44,0.5)]
+聚焦: focus:shadow-[2px_2px_0px_rgba(44,44,44,0.4)]
+```
+
+### 交互效果
+```
+悬停位移: （无）
+悬停缩放: （无）
+悬停透明度: hover:opacity-90
+过渡动画: transition-opacity duration-200
+按下状态: active:opacity-80
+```
+
+### 字体
+```
+标题: font-sans font-semibold tracking-normal
+正文: font-sans
+等宽: font-mono
+```
+
+### 字号
+```
+Hero:  text-3xl md:text-5xl lg:text-6xl
+H1:    text-2xl md:text-4xl
+H2:    text-xl md:text-2xl
+H3:    text-lg md:text-xl
+正文:  text-sm md:text-base
+小字:  text-xs md:text-sm
+```
+
+### 间距
+```
+Section: py-10 md:py-16 lg:py-24
+容器:    px-4 md:px-6 lg:px-10
+卡片:    p-4 md:p-6
+小间距:  gap-2 md:gap-3
+中间距:  gap-3 md:gap-5
+大间距:  gap-5 md:gap-8
+```
+
+### 颜色角色
+```
+背景主色: bg-[#f5f0e8]
+背景辅色: bg-[#e8e2d8]
+背景强调色: bg-[#2c2c2c], bg-[#6b6b6b], bg-[#a0a0a0]
+正文主色: text-[#2c2c2c]
+正文辅色: text-[#5a5a5a]
+正文弱化色: text-[#8a8a8a]
+按钮主色: bg-[#2c2c2c] text-[#f5f0e8]
+按钮辅色: bg-transparent text-[#2c2c2c] border-2 border-dashed border-[#2c2c2c]
+```
+
+---
+
+## [FORBIDDEN] 绝对禁止
+
+以下 class 在本风格中**绝对禁止使用**，生成时必须检查并避免：
+
+### 禁止的 Class
+- `rounded-xl`
+- `rounded-2xl`
+- `rounded-3xl`
+- `rounded-full`
+- `shadow-lg`
+- `shadow-xl`
+- `shadow-2xl`
+- `bg-[#ff71ce]`
+- `bg-[#01cdfe]`
+- `bg-[#ff006e]`
+- `bg-[#00ff00]`
+- `text-[#ff71ce]`
+- `text-[#01cdfe]`
+- `text-[#ff006e]`
+- `border-4`
+- `font-black`
+- `bg-gradient-to-r`
+- `bg-gradient-to-l`
+
+### 禁止的模式
+- 匹配 `^rounded-(?:xl|2xl|3xl|full)$`
+- 匹配 `^shadow-(?:lg|xl|2xl)$`
+- 匹配 `^bg-(?:\[#ff|\[#01cd|\[#00ff)`
+- 匹配 `^bg-gradient-`
+
+### 禁止原因
+- `rounded-xl`: Sketch style uses minimal rounding (rounded-sm) for a hand-drawn feel
+- `shadow-xl`: Sketch style uses very subtle pencil-like shadows, not heavy shadows
+- `bg-[#ff71ce]`: Sketch style uses pencil tones (grays, cream), not neon colors
+- `bg-gradient-to-r`: Sketch style uses flat paper-like surfaces, not gradients
+
+> WARNING: 如果你的代码中包含以上任何 class，必须立即替换。
+
+---
+
+## [REQUIRED] 必须包含
+
+### 按钮必须包含
+```
+rounded-sm
+border-2 border-dashed border-[#2c2c2c]
+transition-opacity duration-200
+font-semibold
+```
+
+### 卡片必须包含
+```
+rounded-sm
+border-2 border-dashed border-[#2c2c2c]
+bg-[#f5f0e8]
+shadow-[2px_2px_0px_rgba(44,44,44,0.3)]
+```
+
+### 输入框必须包含
+```
+rounded-sm
+border-2 border-dashed border-[#2c2c2c]
+bg-[#faf5ed]
+font-sans
+focus:shadow-[2px_2px_0px_rgba(44,44,44,0.4)]
+focus:outline-none
+```
+
+---
+
+## [COMPARE] Sketch Style 错误 vs 正确对比
+
+以下错误示例只代表“未经过当前风格适配的通用默认值”，不要把错误示例当成视觉建议。
+
+### 按钮
+
+[WRONG] **错误示例**（通用组件库默认样式，不要直接复制）：
+```html
+<button class="{GENERIC_LIBRARY_BUTTON_DEFAULT}">
+  点击我
+</button>
+```
+
+[CORRECT] **正确示例**（使用 Sketch Style 的 token）：
+```html
+<button class="rounded-sm border-2 border-dashed border-[#2c2c2c] transition-opacity duration-200 font-semibold bg-[#2c2c2c] text-[#f5f0e8]">
+  点击我
+</button>
+```
+
+### 卡片
+
+[WRONG] **错误示例**（未经当前风格适配的通用卡片）：
+```html
+<div class="{GENERIC_LIBRARY_CARD_DEFAULT}">
+  <h3>{TITLE}</h3>
+</div>
+```
+
+[CORRECT] **正确示例**（使用 Sketch Style 的 card token）：
+```html
+<div class="rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#f5f0e8] shadow-[2px_2px_0px_rgba(44,44,44,0.3)] p-4 md:p-6">
+  <h3 class="font-sans font-semibold tracking-normal text-lg md:text-xl">{TITLE}</h3>
+</div>
+```
+
+### 输入框
+
+[WRONG] **错误示例**（未经当前风格适配的通用输入框）：
+```html
+<input class="{GENERIC_LIBRARY_INPUT_DEFAULT}" />
+```
+
+[CORRECT] **正确示例**（使用 Sketch Style 的 input token）：
+```html
+<input class="rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#faf5ed] font-sans focus:shadow-[2px_2px_0px_rgba(44,44,44,0.4)] focus:outline-none" placeholder="{PLACEHOLDER}" />
+```
+
+---
+
+## [TEMPLATES] Sketch Style 页面骨架模板
+
+以下骨架只使用当前风格的 token。替换 `{PLACEHOLDER}` 时，不要移除或替换这些 token：
+
+### 导航栏骨架
+```html
+<nav class="bg-[#f5f0e8] text-[#2c2c2c] border-2 border-[#2c2c2c] px-4 md:px-6 lg:px-10">
+  <div class="flex items-center justify-between max-w-6xl mx-auto gap-3 md:gap-5">
+    <a href="/" class="font-sans font-semibold tracking-normal text-lg md:text-xl">
+      {LOGO_TEXT}
+    </a>
+    <div class="flex gap-3 md:gap-5 font-sans text-xs md:text-sm">
+      {NAV_LINKS}
+    </div>
+  </div>
+</nav>
+```
+
+### Hero 区块骨架
+```html
+<section class="bg-[#2c2c2c] text-[#2c2c2c] py-10 md:py-16 lg:py-24 px-4 md:px-6 lg:px-10">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="font-sans font-semibold tracking-normal text-3xl md:text-5xl lg:text-6xl">
+      {HEADLINE}
+    </h1>
+    <p class="font-sans text-sm md:text-base max-w-xl">
+      {SUBHEADLINE}
+    </p>
+    <button class="rounded-sm border-2 border-dashed border-[#2c2c2c] transition-opacity duration-200 font-semibold bg-[#2c2c2c] text-[#f5f0e8]">
+      {CTA_TEXT}
+    </button>
+  </div>
+</section>
+```
+
+### 卡片网格骨架
+```html
+<section class="bg-[#f5f0e8] text-[#2c2c2c] py-10 md:py-16 lg:py-24 px-4 md:px-6 lg:px-10">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="font-sans font-semibold tracking-normal text-xl md:text-2xl">{SECTION_TITLE}</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
+      <!-- Card template - repeat for each card -->
+      <div class="rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#f5f0e8] shadow-[2px_2px_0px_rgba(44,44,44,0.3)] p-4 md:p-6">
+        <h3 class="font-sans font-semibold tracking-normal text-lg md:text-xl">{CARD_TITLE}</h3>
+        <p class="font-sans text-sm md:text-base text-[#8a8a8a]">{CARD_DESCRIPTION}</p>
+      </div>
+    </div>
+  </div>
+</section>
+```
+
+### 表单输入骨架
+```html
+<input class="rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#faf5ed] font-sans focus:shadow-[2px_2px_0px_rgba(44,44,44,0.4)] focus:outline-none" placeholder="{PLACEHOLDER}" />
+```
+
+### 页脚骨架
+```html
+<footer class="bg-[#e8e2d8] text-[#5a5a5a] py-10 md:py-16 lg:py-24 px-4 md:px-6 lg:px-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
+      <div>
+        <span class="font-sans font-semibold tracking-normal text-lg md:text-xl">{LOGO_TEXT}</span>
+        <p class="font-sans text-xs md:text-sm">{TAGLINE}</p>
+      </div>
+      <div>
+        <h4 class="font-sans font-semibold tracking-normal text-lg md:text-xl">{COLUMN_TITLE}</h4>
+        <ul class="font-sans text-xs md:text-sm">
+          {FOOTER_LINKS}
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+```
+
+---
+
+## [CHECKLIST] Sketch Style 生成后自检清单
+
+**输出代码前，逐项验证当前风格的 token 和规则。如有违反，先修正再交付：**
+
+### Token 检查
+- [ ] 按钮包含：`rounded-sm border-2 border-dashed border-[#2c2c2c] transition-opacity duration-200 font-semibold`
+- [ ] 卡片包含：`rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#f5f0e8] shadow-[2px_2px_0px_rgba(44,44,44,0.3)]`
+- [ ] 输入框包含：`rounded-sm border-2 border-dashed border-[#2c2c2c] bg-[#faf5ed] font-sans focus:shadow-[2px_2px_0px_rgba(44,44,44,0.4)] focus:outline-none`
+
+### 禁止项检查
+- [ ] 没有使用 `rounded-xl`
+- [ ] 没有使用 `rounded-2xl`
+- [ ] 没有使用 `rounded-3xl`
+- [ ] 没有使用 `rounded-full`
+- [ ] 没有使用 `shadow-lg`
+- [ ] 没有使用 `shadow-xl`
+- [ ] 没有使用 `shadow-2xl`
+- [ ] 没有使用 `bg-[#ff71ce]`
+
+### 风格规则检查
+- [ ] 使用纸张色背景 bg-[#f5f0e8]
+- [ ] 边框使用不规则风格 border-2 border-dashed 或 wavy
+- [ ] 使用手写风格字体或 serif 字体
+- [ ] 阴影使用交叉线条效果而非纯色
+- [ ] 元素保留轻微倾斜 rotate-[-1deg] 增加手绘感
+
+### 风格漂移检查
+- [ ] 没有违反：禁止使用完美的直线和圆角
+- [ ] 没有违反：禁止使用纯白背景（应使用纸张色）
+- [ ] 没有违反：禁止使用渐变效果
+- [ ] 没有违反：禁止使用玻璃模糊效果
+- [ ] 没有违反：禁止使用过于饱和的颜色
+
+### 通用交付检查
+- [ ] 响应式布局在手机、平板和桌面下稳定，没有横向溢出
+- [ ] 所有交互元素有清晰焦点、可访问名称和 reduced-motion 方案
+- [ ] 文本对比度达到 WCAG AA，且没有用颜色单独传递状态
+- [ ] 结果仍然能够一眼识别为 Sketch Style，没有混入其他风格的模板
+
+---
+
+## [EXAMPLES] 示例 Prompt
+
+### 1. 手绘作品集
+
+铅笔手绘风格的个人作品集
+
+```
+用 Sketch Style 风格创建一个个人作品集页面，要求：
+1. 纸张纹理背景 #f5f0e8
+2. 虚线边框卡片展示作品
+3. 衬线斜体字体标题
+4. 元素微微倾斜增加手绘感
+5. 铅笔灰色主色调
+6. 涂鸦装饰元素
+```
+
+### 2. 手绘笔记页面
+
+仿手写笔记的博客页面
+
+```
+用 Sketch Style 风格设计一个笔记/博客页面，要求：
+1. 模仿素描本的纸张质感
+2. 手写风格的标题和正文
+3. 波浪下划线标记重点
+4. 涂鸦圆圈标注关键点
+5. 虚线分割线分隔内容
+6. 铅笔素描风格的图标
+```
+
+### 3. 作品集展示
+
+生成 铅笔手绘风风格的作品集页面
+
+```
+Create a portfolio showcase page using Sketch Style style with project grid, about section, contact form, and consistent visual language.
+```
+
+## 绝对禁止（匹配即拒绝）
+
+以下模式一旦出现，视为风格违规——不找借口，直接重写。
+
+- 使用完美的直线和圆角
+- 使用纯白背景（应使用纸张色）
+- 使用渐变效果
+- 使用玻璃模糊效果
+- 使用过于饱和的颜色
+- 长时间平滑动画（手绘反馈应短促直接）
+- 过度规则的 hover 变化（需保留笔触粗糙感）
+
+## 自检清单（交付前逐条确认）
+
+如果任何一条不通过，说明风格漂移了——修改后再交付。
+
+- [ ] 没有紫色到蓝色的渐变
+- [ ] 没有使用 Inter / Roboto / Geist 等过度使用的字体
+- [ ] 没有嵌套卡片（卡片里面套卡片）
+- [ ] 没有在彩色背景上放灰色文字
+- [ ] 正文对比度满足 WCAG AA（≥4.5:1）
+- [ ] 没有 bounce / elastic 缓动曲线
+- [ ] 动效有 prefers-reduced-motion 备选方案
+- [ ] 正文行宽不超过 65-75 个字符
+- [ ] 没有单侧粗边框装饰（border-left/right accent stripe）
+- [ ] 没有渐变文字（background-clip: text）
+- [ ] 没有把玻璃态（glassmorphism）当作默认风格
+- [ ] 没有 tiny uppercase tracked eyebrow 放在每个 section 标题上面
+- [ ] 禁止使用完美的直线和圆角
+- [ ] 禁止使用纯白背景（应使用纸张色）
+- [ ] 禁止使用渐变效果
+- [ ] 禁止使用玻璃模糊效果
+- [ ] 禁止使用过于饱和的颜色
