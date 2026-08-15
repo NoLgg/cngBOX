@@ -71,6 +71,11 @@ class ScreenshotOverlay(QWidget):
             self.close()
 
     def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.RightButton:
+            # 右键取消截图（spec: Esc 或右键取消）
+            self.cancelled.emit()
+            self.close()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._origin = QRect(event.position().toPoint(), event.position().toPoint())
             self._current = QRect(event.position().toPoint(), event.position().toPoint())

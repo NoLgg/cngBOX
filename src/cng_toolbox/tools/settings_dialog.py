@@ -92,15 +92,19 @@ class SettingsDialog(QDialog):
         config: ConfigStore,
         hotkey_manager: HotkeyManager,
         tool_ids: list[str],
+        color_history: list[str] | None = None,
+        on_color_history_click=None,
         parent=None,
     ) -> None:
         super().__init__(parent)
         self._config = config
         self._hotkeys = hotkey_manager
         self._tool_ids = tool_ids
+        self._color_history = color_history or []
+        self._on_color_history_click = on_color_history_click
         self._hotkey_edits: dict[str, HotkeyEdit] = {}
         self.setWindowTitle("设置 — 草泥鸽工具箱")
-        self.resize(520, 520)
+        self.resize(520, 560)
 
         layout = QVBoxLayout(self)
         tabs = QTabWidget()
@@ -109,6 +113,7 @@ class SettingsDialog(QDialog):
         tabs.addTab(self._build_appearance_tab(), "外观")
         tabs.addTab(self._build_clipboard_tab(), "剪贴板")
         tabs.addTab(self._build_tools_tab(), "工具")
+        tabs.addTab(self._build_color_history_tab(), "取色历史")
         layout.addWidget(tabs, 1)
 
         buttons = QHBoxLayout()
@@ -320,3 +325,42 @@ class SettingsDialog(QDialog):
     def _on_tool_toggled(self, tool_id: str, checked: bool) -> None:
         self._config.set(f"tools.{tool_id}", bool(checked))
         self.settings_changed.emit()
+
+    # -- 取色历史 ------------------------------------------------------------------
+
+    def _build_color_history_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        hint = QLabel("最近取过的颜色（点击复制 HEX）：")
+        hint.setStyleSheet("color: #5a5a5a; font-size: 12px;")
+        layout.addWidget(hint)
+
+        flow = QHBoxLayout()
+        flow.setSpacing(10)
+        if self._color_history:
+            for hex_color in self._color_history:
+                btn = QPushButton()
+                btn.setFixedSize(40, 40)
+                btn.setToolTip(hex_color)
+                btn.setStyleSheet(
+                    f"QPushButton {{ background: {hex_color}; border: 2px solid #2c2c2c;"
+                    f"border-radius: 7px; }}"
+                    f"QPushButton:hover {{ border: 3px solid #d99a3d; }}"
+                )
+                btn.clicked.connect(
+                    lambda checked, h=hex_color: self._on_color_clicked(h)
+                )
+                flow.addWidget(btn)
+        else:
+            empty_label = QLabel("还没有取过色 🎨\n按取色热键试试吧")
+            empty_label.setStyleSheet("color: #8a8a8a; font-size: 13px;")
+            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(empty_label, 1)
+            return page
+        layout.addLayout(flow)
+        layout.addStretch(1)
+        return page
+
+    def _on_color_clicked(self, hex_color: str) -> None:
+        if self._on_color_history_click:
+            self._on_color_history_click(hex_color)

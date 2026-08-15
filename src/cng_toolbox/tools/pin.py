@@ -70,6 +70,9 @@ class PinWindow(QWidget):
             return 0
         if preset == "thick":
             return 6
+        if preset == "dashed":
+            # 虚线跟随用户配置的粗细（至少 2px 保证可见）
+            return max(2, self._config.get("pin_border.width", 2))
         return self._config.get("pin_border.width", 2)
 
     def _resize_to_content(self) -> None:
@@ -239,6 +242,7 @@ class PinManager(QObject):
 
     limit_reached = Signal()
     copied = Signal(object)  # QPixmap（贴图被复制时发出，供防回环）
+    count_changed = Signal(int)  # 贴图数量变化（供状态卡刷新）
 
     def __init__(self, config: ConfigStore, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -264,6 +268,7 @@ class PinManager(QObject):
         self._next_id += 1
         self._pins[pin_id] = pin
         pin.show()
+        self.count_changed.emit(len(self._pins))
         return pin
 
     def _on_pin_closed(self, pin: PinWindow) -> None:
@@ -271,11 +276,13 @@ class PinManager(QObject):
             if p is pin:
                 del self._pins[pin_id]
                 break
+        self.count_changed.emit(len(self._pins))
 
     def close_all(self) -> None:
         for pin in list(self._pins.values()):
             pin.close()
         self._pins.clear()
+        self.count_changed.emit(0)
 
     def toggle_hide_all(self) -> None:
         self._hidden = not self._hidden

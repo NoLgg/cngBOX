@@ -108,16 +108,18 @@ class CaoNiGeApp:
         self.tray.invoke_screenshot.connect(self.screenshot.start)
         self.tray.invoke_clipboard.connect(self.clipboard.show_panel)
         self.tray.invoke_color_picker.connect(self.color_picker.start)
+        self.tray.clip_to_screen.connect(self.clipboard.clip_to_screen)
         self.tray.close_all_pins.connect(self.pins.close_all)
         self.tray.quit_app.connect(self.quit)
 
         # 截图完成 → 贴图 + 复制到剪贴板
         self.screenshot.completed.connect(self._on_screenshot_done)
 
-        # 贴图上限提示
+        # 贴图上限提示 + 状态卡刷新
         self.pins.limit_reached.connect(
             lambda: self.tray.notify("贴图数量已达上限", "最多同时保留 20 张贴图")
         )
+        self.pins.count_changed.connect(self._update_status)
 
         # 剪贴板提示
         self.clipboard.clipboard_too_big.connect(
@@ -174,6 +176,7 @@ class CaoNiGeApp:
         self.hotkeys.apply_all(enabled_ids=enabled_ids)
         if self.main_window is not None:
             self.main_window.rebuild(self.registry, self._hotkey_texts())
+            self._update_status(self.pins.count)
 
     def _hotkey_texts(self) -> dict[str, str]:
         hotkeys = self.config.get("hotkeys", {}) or {}
@@ -185,16 +188,29 @@ class CaoNiGeApp:
         if self.main_window is None:
             self.main_window = MainWindow(self.registry, self._hotkey_texts())
             self.main_window.tool_invoked.connect(self._on_tool_invoked)
+            # 初始化状态卡真实数据
+            self._update_status(self.pins.count)
         self.main_window.show()
         self.main_window.raise_()
         self.main_window.activateWindow()
+
+    def _update_status(self, pins: int) -> None:
+        """刷新主面板状态卡（贴图在屏数）。"""
+        if self.main_window is not None:
+            self.main_window.update_status(pins)
 
     def _on_tool_invoked(self, tool_id: str) -> None:
         if tool_id == "settings":
             self._show_settings()
             return
+        if tool_id == "close_pins":
+            self.pins.close_all()
+            return
         tool = self.registry.get(tool_id)
         if tool:
+            # 唤起工具时隐藏主面板，避免遮挡截图/取色遮罩
+            if self.main_window is not None:
+                self.main_window.hide()
             tool.invoke()
 
     def _show_settings(self) -> None:
@@ -203,11 +219,19 @@ class CaoNiGeApp:
                 self.config,
                 self.hotkeys,
                 [t.tool_id for t in self.registry.all()],
+                color_history=self.color_picker.history(),
+                on_color_history_click=self._copy_color_history,
             )
             self.settings_dialog.settings_changed.connect(self._on_settings_changed)
         self.settings_dialog.show()
         self.settings_dialog.raise_()
         self.settings_dialog.activateWindow()
+
+    def _copy_color_history(self, hex_color: str) -> None:
+        """点击取色历史：复制色值 + 防回环标记。"""
+        QApplication.clipboard().setText(hex_color)
+        self.clipboard.mark_self_write_text(hex_color)
+        self.tray.notify("取色历史", f"已复制 {hex_color}")
 
     def _on_settings_changed(self) -> None:
         # 热键/主题/工具开关已在各自处理中联动；这里兜底刷新主面板

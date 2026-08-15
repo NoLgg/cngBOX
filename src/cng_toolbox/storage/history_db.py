@@ -145,6 +145,16 @@ class HistoryDB:
         self._conn.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
         self._conn.commit()
 
+    def clear_unpinned(self) -> list[str]:
+        """清空所有未固定条目，返回被删条目的 image_path 列表（孤儿文件清理用）。"""
+        rows = self._conn.execute(
+            "SELECT image_path FROM entries WHERE pinned = 0 AND image_path IS NOT NULL"
+        ).fetchall()
+        paths = [r[0] for r in rows]
+        self._conn.execute("DELETE FROM entries WHERE pinned = 0")
+        self._conn.commit()
+        return paths
+
     def cleanup(self, limit: int) -> list[str]:
         """清理超出上限的最旧未固定条目，返回被删条目的 image_path 列表。"""
         rows = self._conn.execute(

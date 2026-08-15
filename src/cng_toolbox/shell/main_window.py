@@ -258,23 +258,21 @@ class MainWindow(QMainWindow):
         m_layout.addWidget(m_tag)
         grid.addWidget(mascot_card, 0, 0, 2, 2)
 
-        # 工具卡
-        col = 2
-        row = 0
-        for tool in self._registry.enabled():
+        # 工具卡：从第 3 列开始排（0,2)(0,3)(1,2)，第 3 个落在 (1,3) 之前由状态卡占据
+        tools = self._registry.enabled()
+        positions = [(0, 2), (0, 3), (1, 2)]
+        for tool, (row, col) in zip(tools, positions):
             card = self._make_tool_card(tool.tool_id, tool.name, tool.description,
                                         tool.hotkey_id or None)
             grid.addWidget(card, row, col)
-            col += 1
-            if col >= 4:
-                col = 2
-                row += 1
 
-        # 状态卡（占一列）
-        status_card = self._make_status_card()
-        grid.addWidget(status_card, 0, 3) if row == 0 else grid.addWidget(status_card, row, col)
+        # 状态卡（1,3）：真实数据由 update_status 刷新
+        self._status_card = self._make_status_card()
+        grid.addWidget(self._status_card, 1, 3)
 
-        # 设置卡（占满剩余一行）
+        # 关闭全部贴图 + 设置卡（第 3 行）
+        close_card = self._make_close_pins_card()
+        grid.addWidget(close_card, 2, 0, 1, 2)
         settings_card = self._make_settings_card()
         grid.addWidget(settings_card, 2, 2, 1, 2)
 
@@ -330,15 +328,55 @@ class MainWindow(QMainWindow):
         dot = QLabel("●")
         dot.setStyleSheet(f"color: #6b9e62; font-size: 14px;")
         layout.addWidget(dot)
-        num = QLabel("3")
-        num.setStyleSheet(
-            f"font-family: 'KaiTi','楷体'; font-size: 28px; font-weight: bold;"
+        self._status_pins = QLabel("0")
+        self._status_pins.setStyleSheet(
+            f"font-family: 'KaiTi','楷体'; font-size: 26px; font-weight: bold;"
             f"color: {TEAL_DEEP};"
         )
-        layout.addWidget(num)
+        layout.addWidget(self._status_pins)
         label = QLabel("贴图在屏")
         label.setStyleSheet(f"color: {INK_SOFT}; font-size: 12px;")
         layout.addWidget(label)
+        return card
+
+    def update_status(self, pins: int) -> None:
+        """刷新状态卡真实数据。"""
+        if hasattr(self, "_status_pins"):
+            self._status_pins.setText(str(pins))
+
+    def _make_close_pins_card(self) -> SketchCard:
+        card = SketchCard("close_pins")
+        card.clicked.connect(self.tool_invoked.emit)
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(12)
+        icon_box = QFrame()
+        icon_box.setFixedSize(44, 44)
+        icon_box.setStyleSheet(
+            f"QFrame {{ background: {PAPER_DEEP}; border: 2px solid {INK};"
+            f"border-radius: 7px; }}"
+        )
+        icon_lay = QVBoxLayout(icon_box)
+        icon_lay.setContentsMargins(4, 4, 4, 4)
+        pixmap = load_pixmap("icon-pin")
+        if not pixmap.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(pixmap.scaled(
+                34, 34, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+            icon_lay.addWidget(icon_label)
+        layout.addWidget(icon_box)
+        text_lay = QVBoxLayout()
+        text_lay.setSpacing(2)
+        title = QLabel("关闭全部贴图")
+        title.setObjectName("CardTitle")
+        text_lay.addWidget(title)
+        desc = QLabel("一键清空屏幕上的所有置顶贴图")
+        desc.setObjectName("CardDesc")
+        text_lay.addWidget(desc)
+        layout.addLayout(text_lay)
+        layout.addStretch(1)
         return card
 
     def _make_settings_card(self) -> SketchCard:

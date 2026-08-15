@@ -20,6 +20,7 @@ class TrayApp(QObject):
     invoke_screenshot = Signal()
     invoke_clipboard = Signal()
     invoke_color_picker = Signal()
+    clip_to_screen = Signal()
     close_all_pins = Signal()
     quit_app = Signal()
 
@@ -41,6 +42,10 @@ class TrayApp(QObject):
         act_clip = QAction(load_icon("icon-tool-clipboard"), "粘贴板", self)
         act_clip.triggered.connect(self.invoke_clipboard)
         menu.addAction(act_clip)
+
+        act_clip_screen = QAction(load_icon("icon-pin"), "贴出剪贴板", self)
+        act_clip_screen.triggered.connect(self.clip_to_screen)
+        menu.addAction(act_clip_screen)
 
         act_color = QAction(load_icon("icon-tool-colorpicker"), "取色器", self)
         act_color.triggered.connect(self.invoke_color_picker)

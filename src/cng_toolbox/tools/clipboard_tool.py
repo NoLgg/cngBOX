@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 from cng_toolbox.config import TEXT_PIN_MAX_WIDTH
+from cng_toolbox.resources import icon_path
 from cng_toolbox.shell.config_store import ConfigStore
 from cng_toolbox.storage.history_db import HistoryDB
 from cng_toolbox.storage.image_store import ImageStore, hash_bytes
@@ -113,6 +114,20 @@ class HistoryPanel(QDialog):
         top.addWidget(self._filter)
         layout.addLayout(top)
 
+        # 空状态插画（列表为空时显示）
+        self._empty = QLabel()
+        self._empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._empty.setWordWrap(True)
+        empty_pm = QPixmap(icon_path("art-clipboard-empty"))
+        if not empty_pm.isNull():
+            self._empty.setPixmap(empty_pm.scaled(
+                180, 180, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+            self._empty.setText("")
+        self._empty.setStyleSheet("color: #8a8a8a; font-size: 13px;")
+        layout.addWidget(self._empty, 1)
+
         self._list = QListWidget()
         self._list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self._list.itemClicked.connect(self._on_item_clicked)
@@ -120,6 +135,14 @@ class HistoryPanel(QDialog):
         self._list.customContextMenuRequested.connect(self._on_context_menu)
         self._list.itemDoubleClicked.connect(self._on_item_double_clicked)
         layout.addWidget(self._list, 1)
+
+        bottom = QHBoxLayout()
+        bottom.addStretch(1)
+        clear_btn = QPushButton("清空历史")
+        clear_btn.setToolTip("删除所有未固定的历史条目")
+        clear_btn.clicked.connect(self._clear_history)
+        bottom.addWidget(clear_btn)
+        layout.addLayout(bottom)
 
         self._reload()
 
@@ -143,6 +166,33 @@ class HistoryPanel(QDialog):
             item.setSizeHint(widget.sizeHint())
             self._list.addItem(item)
             self._list.setItemWidget(item, widget)
+
+        # 空状态切换
+        has_entries = bool(entries)
+        self._list.setVisible(has_entries)
+        self._empty.setVisible(not has_entries)
+        if not has_entries and not self._empty.pixmap():
+            if self._search.text().strip():
+                self._empty.setText("没有找到匹配的记录 🕵️")
+            else:
+                self._empty.setText("剪贴板空空的\n复制点什么，草泥鸽帮你记着 📋")
+
+    def _clear_history(self) -> None:
+        """清空所有未固定条目（固定条目保留）。"""
+        from PySide6.QtWidgets import QMessageBox
+
+        ret = QMessageBox.question(
+            self, "清空历史",
+            "确定清空所有未固定的历史记录吗？\n（固定条目会保留）",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if ret == QMessageBox.StandardButton.Yes:
+            orphan_paths = self._db.clear_unpinned()
+            for p in orphan_paths:
+                self._images.remove_by_path(p)
+            self.deleted.emit()
+            self._reload()
 
     def _build_item_widget(self, entry: dict) -> QWidget:
         container = QWidget()

@@ -81,3 +81,23 @@ def test_delete(db: HistoryDB) -> None:
     eid = db.upsert_text("bye", "h1")
     db.delete(eid)
     assert db.get(eid) is None
+
+
+def test_clear_unpinned_keeps_pinned(db: HistoryDB) -> None:
+    for i in range(4):
+        db.upsert_text(f"item-{i}", f"h{i}")
+    entries = db.list_entries()
+    pinned = entries[0]
+    db.set_pinned(pinned["id"], True)
+    db.clear_unpinned()
+    remaining = db.list_entries()
+    assert len(remaining) == 1
+    assert remaining[0]["id"] == pinned["id"]
+
+
+def test_clear_unpinned_returns_image_paths(db: HistoryDB) -> None:
+    db.upsert_text("txt", "h1")
+    db.upsert_image("img", "/tmp/orphan.png")
+    paths = db.clear_unpinned()
+    assert "/tmp/orphan.png" in paths
+    assert db.list_entries() == []

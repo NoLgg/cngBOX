@@ -33,12 +33,13 @@ DEFAULTS: dict[str, Any] = {
     # 通用
     "autostart": False,
     # 全局热键（None 表示禁用）
+    # 注意：避免与常见软件冲突（Ctrl+Shift+A 是 VS Code 全选、Ctrl+Shift+V 是粘贴纯文本）
     "hotkeys": {
-        "screenshot": "Ctrl+Shift+A",
-        "color_picker": "Ctrl+Shift+C",
-        "clipboard_panel": "Ctrl+Shift+V",
-        "show_panel": "Ctrl+Shift+P",
-        "close_all_pins": "Ctrl+Shift+Q",
+        "screenshot": "Ctrl+Alt+A",
+        "color_picker": "Ctrl+Alt+C",
+        "clipboard_panel": "Ctrl+Alt+V",
+        "show_panel": "Ctrl+Alt+P",
+        "close_all_pins": "Ctrl+Alt+Q",
     },
     # 外观
     "theme": "game-dark",
