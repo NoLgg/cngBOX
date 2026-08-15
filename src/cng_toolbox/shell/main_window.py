@@ -106,10 +106,12 @@ class TitleBar(QWidget):
         mascot = load_pixmap("mascot-full")
         mascot_label = QLabel()
         if not mascot.isNull():
-            mascot_label.setPixmap(
-                mascot.scaled(34, 34, Qt.AspectRatioMode.KeepAspectRatio,
-                              Qt.TransformationMode.SmoothTransformation)
+            mascot_pm = mascot.scaled(
+                34, 34, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
             )
+            mascot_label.setPixmap(mascot_pm)
+            mascot_label.setMinimumSize(mascot_pm.size())
         layout.addWidget(mascot_label)
 
         title = QLabel("草泥鸽工具箱")
@@ -380,11 +382,9 @@ class MainWindow(QMainWindow):
         img = load_pixmap("banner-startup")
         if not img.isNull():
             label = QLabel()
-            label.setPixmap(img.scaled(
-                816, 240, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                Qt.TransformationMode.SmoothTransformation,
-            ))
-            label.setFixedHeight(190)
+            # 固定高度等比缩放（scaledToHeight 完整保留比例，不裁切），居中显示
+            label.setPixmap(img.scaledToHeight(200, Qt.TransformationMode.SmoothTransformation))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setScaledContents(False)
             lay.addWidget(label)
         else:
@@ -404,10 +404,13 @@ class MainWindow(QMainWindow):
         mascot_img = load_pixmap("mascot-full")
         if not mascot_img.isNull():
             m_label = QLabel()
-            m_label.setPixmap(mascot_img.scaled(
+            m_pm = mascot_img.scaled(
                 220, 220, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
-            ))
+            )
+            m_label.setPixmap(m_pm)
+            # 防止布局压缩导致图片被裁
+            m_label.setMinimumSize(m_pm.size())
             m_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             m_layout.addWidget(m_label, 1)
         m_name = QLabel("草泥鸽 · 咕咕")
@@ -467,10 +470,12 @@ class MainWindow(QMainWindow):
         pixmap = load_pixmap(TOOL_ICONS.get(tool_id, ""))
         if not pixmap.isNull():
             icon_label = QLabel()
-            icon_label.setPixmap(pixmap.scaled(
+            icon_pm = pixmap.scaled(
                 44, 44, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
-            ))
+            )
+            icon_label.setPixmap(icon_pm)
+            icon_label.setMinimumSize(icon_pm.size())
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
 
@@ -526,10 +531,12 @@ class MainWindow(QMainWindow):
         pixmap = load_pixmap("icon-pin")
         if not pixmap.isNull():
             icon_label = QLabel()
-            icon_label.setPixmap(pixmap.scaled(
+            icon_pm = pixmap.scaled(
                 34, 34, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
-            ))
+            )
+            icon_label.setPixmap(icon_pm)
+            icon_label.setMinimumSize(icon_pm.size())
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
         text_lay = QVBoxLayout()
@@ -561,10 +568,12 @@ class MainWindow(QMainWindow):
         pixmap = load_pixmap(TOOL_ICONS["settings"])
         if not pixmap.isNull():
             icon_label = QLabel()
-            icon_label.setPixmap(pixmap.scaled(
+            icon_pm = pixmap.scaled(
                 34, 34, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
-            ))
+            )
+            icon_label.setPixmap(icon_pm)
+            icon_label.setMinimumSize(icon_pm.size())
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
         text_lay = QVBoxLayout()
