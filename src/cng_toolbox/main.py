@@ -28,6 +28,7 @@ from cng_toolbox.tools.color_picker import ColorPickerTool
 from cng_toolbox.tools.pin import PinManager
 from cng_toolbox.tools.screenshot import ScreenshotTool
 from cng_toolbox.tools.settings_dialog import SettingsDialog
+from cng_toolbox.ui_utils import center_on_screen, fade_in, raise_and_focus
 
 
 class CaoNiGeApp:
@@ -191,8 +192,10 @@ class CaoNiGeApp:
             # 初始化状态卡真实数据
             self._update_status(self.pins.count)
         self.main_window.show()
-        self.main_window.raise_()
-        self.main_window.activateWindow()
+        # 多屏适应：居中到鼠标所在屏幕
+        center_on_screen(self.main_window, offset_y=-40)
+        fade_in(self.main_window)
+        raise_and_focus(self.main_window)
 
     def _update_status(self, pins: int) -> None:
         """刷新主面板状态卡（贴图在屏数）。"""
@@ -223,9 +226,10 @@ class CaoNiGeApp:
                 on_color_history_click=self._copy_color_history,
             )
             self.settings_dialog.settings_changed.connect(self._on_settings_changed)
-        self.settings_dialog.show()
-        self.settings_dialog.raise_()
-        self.settings_dialog.activateWindow()
+        # 多屏适应：跟随鼠标所在屏幕
+        center_on_screen(self.settings_dialog)
+        fade_in(self.settings_dialog)
+        raise_and_focus(self.settings_dialog)
 
     def _copy_color_history(self, hex_color: str) -> None:
         """点击取色历史：复制色值 + 防回环标记。"""

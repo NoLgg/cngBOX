@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMenu,
+    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -100,7 +101,6 @@ class HistoryPanel(QDialog):
         self._on_self_copy = on_self_copy  # 回调：自身复制标记（防回环）
         self.setWindowTitle("粘贴板 — 剪贴板历史")
         self.resize(520, 620)
-        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
         layout = QVBoxLayout(self)
         top = QHBoxLayout()
@@ -446,9 +446,12 @@ class ClipboardTool(QObject):
             )
             self._panel.clip_to_screen.connect(self.clip_entry_to_screen)
         self._panel.refresh()
-        self._panel.show()
-        self._panel.raise_()
-        self._panel.activateWindow()
+        # 多屏适应：居中到鼠标所在屏幕；置顶 + 激活 + 淡入
+        from cng_toolbox.ui_utils import center_on_screen, fade_in, raise_and_focus
+
+        center_on_screen(self._panel, offset_y=-30)
+        raise_and_focus(self._panel)
+        fade_in(self._panel)
 
     def _mark_entry_self_write(self, entry: dict) -> None:
         if entry["type"] == "text":

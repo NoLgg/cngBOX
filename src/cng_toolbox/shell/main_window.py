@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtCore import QPoint, QPropertyAnimation, Qt, Signal
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
@@ -52,7 +52,7 @@ def _hard_shadow(widget: QWidget, offset: int = 3, blur: int = 0) -> None:
 
 
 class SketchCard(QFrame):
-    """手绘虚线边框卡片。"""
+    """手绘虚线边框卡片（悬停上浮动画）。"""
 
     clicked = Signal(str)  # tool_id
 
@@ -62,11 +62,29 @@ class SketchCard(QFrame):
         self.setObjectName("Card")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMinimumSize(170, 150)
+        self._hover_anim: QPropertyAnimation | None = None
         _hard_shadow(self)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._tool_id:
             self.clicked.emit(self._tool_id)
+
+    def enterEvent(self, event) -> None:
+        """悬停：轻微上浮（便当盒交互反馈）。"""
+        self._animate_hover(-3)
+
+    def leaveEvent(self, event) -> None:
+        self._animate_hover(0)
+
+    def _animate_hover(self, dy: int) -> None:
+        from PySide6.QtCore import QEasingCurve
+
+        self._hover_anim = QPropertyAnimation(self, b"pos", self)
+        self._hover_anim.setDuration(110)
+        self._hover_anim.setStartValue(self.pos())
+        self._hover_anim.setEndValue(QPoint(self.x(), self.y() + dy))
+        self._hover_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._hover_anim.start()
 
 
 class TitleBar(QWidget):
@@ -144,16 +162,22 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._registry = registry
         self._hotkey_texts = hotkey_texts
-        # 无边框窗口：边框/背景全部由内部手绘风格呈现
+        # 无边框窗口：边框/背景全部由内部手绘风格呈现。
+        # 注意：不加 WindowStaysOnTopHint —— 主面板不需要一直置顶，
+        # 否则会压住设置窗口/其他应用（设置窗口置顶逻辑问题修复）。
         self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Window
+            Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("草泥鸽工具箱")
         self.resize(860, 620)
         self._build()
+
+    def showEvent(self, event) -> None:
+        """显示时置顶 + 淡入动画。"""
+        super().showEvent(event)
+        self.raise_()
+        self.activateWindow()
 
     def _build(self) -> None:
         # 外层容器：纸张背景 + 墨线边框 + 贴纸阴影（模拟窗口边框）

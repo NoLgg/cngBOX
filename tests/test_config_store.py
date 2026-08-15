@@ -59,3 +59,34 @@ def test_config_set_emits_changed(tmp_path: Path) -> None:
 def test_config_unknown_key_returns_default(tmp_path: Path) -> None:
     store = ConfigStore(tmp_path)
     assert store.get("no.such.key", 42) == 42
+
+
+def test_config_migrates_legacy_hotkeys(tmp_path: Path) -> None:
+    """旧默认热键（Ctrl+Shift+*）自动迁移为新默认（Ctrl+Alt+*）。"""
+    legacy = {
+        "hotkeys": {
+            "screenshot": "Ctrl+Shift+A",
+            "clipboard_panel": "Ctrl+Shift+V",
+            "show_panel": "Ctrl+Shift+P",
+        }
+    }
+    (tmp_path / "config.json").write_text(
+        json.dumps(legacy, ensure_ascii=False), encoding="utf-8"
+    )
+    store = ConfigStore(tmp_path)
+    assert store.get("hotkeys.screenshot") == "Ctrl+Alt+A"
+    assert store.get("hotkeys.clipboard_panel") == "Ctrl+Alt+V"
+    assert store.get("hotkeys.show_panel") == "Ctrl+Alt+P"
+    # 迁移结果已持久化
+    saved = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
+    assert saved["hotkeys"]["screenshot"] == "Ctrl+Alt+A"
+
+
+def test_config_keeps_custom_hotkeys(tmp_path: Path) -> None:
+    """用户自定义热键不应被迁移覆盖。"""
+    custom = {"hotkeys": {"screenshot": "Ctrl+F9", "color_picker": "Ctrl+Shift+C"}}
+    (tmp_path / "config.json").write_text(
+        json.dumps(custom, ensure_ascii=False), encoding="utf-8"
+    )
+    store = ConfigStore(tmp_path)
+    assert store.get("hotkeys.screenshot") == "Ctrl+F9"

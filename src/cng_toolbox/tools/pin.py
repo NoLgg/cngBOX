@@ -267,7 +267,21 @@ class PinManager(QObject):
         pin_id = self._next_id
         self._next_id += 1
         self._pins[pin_id] = pin
+        # 多屏适应：贴图出现在鼠标所在屏幕中央偏上（避免盖住鼠标）
+        from cng_toolbox.ui_utils import screen_at_cursor
+
+        screen = screen_at_cursor()
+        if screen is not None:
+            geo = screen.geometry()
+            pin.move(
+                geo.x() + (geo.width() - pin.width()) // 2,
+                geo.y() + max(40, (geo.height() - pin.height()) // 3),
+            )
+        # 淡入动画
+        from cng_toolbox.ui_utils import fade_in
+
         pin.show()
+        fade_in(pin, ms=120, slide=4)
         self.count_changed.emit(len(self._pins))
         return pin
 

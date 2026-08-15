@@ -72,6 +72,32 @@ PIN_SCALE_MIN = 0.2
 PIN_SCALE_MAX = 5.0
 
 
+# 旧版本默认热键（用于自动迁移：用户配置若仍是旧默认值，升级为新默认）
+_LEGACY_HOTKEYS = {
+    "screenshot": "Ctrl+Shift+A",
+    "color_picker": "Ctrl+Shift+C",
+    "clipboard_panel": "Ctrl+Shift+V",
+    "show_panel": "Ctrl+Shift+P",
+    "close_all_pins": "Ctrl+Shift+Q",
+}
+
+
+def _migrate_config(config: dict) -> bool:
+    """迁移旧版本配置。返回是否发生变更。
+
+    已知迁移：
+    - v0 旧默认热键（Ctrl+Shift+*）→ 新默认（Ctrl+Alt+*），避免与常见软件冲突
+    """
+    changed = False
+    hotkeys = config.get("hotkeys")
+    if isinstance(hotkeys, dict):
+        for hotkey_id, legacy in _LEGACY_HOTKEYS.items():
+            if hotkeys.get(hotkey_id) == legacy:
+                hotkeys[hotkey_id] = DEFAULTS["hotkeys"][hotkey_id]
+                changed = True
+    return changed
+
+
 def deep_merge(base: dict, override: dict) -> dict:
     """递归合并两个 dict（override 优先），返回新 dict。"""
     result = deepcopy(base)
@@ -107,6 +133,9 @@ class ConfigStore(QObject):
             if not isinstance(raw, dict):
                 raise ValueError("config root must be an object")
             self._config = deep_merge(DEFAULTS, raw)
+            # 旧版本配置自动迁移（如旧默认热键升级）
+            if _migrate_config(self._config):
+                self._save()
         except (json.JSONDecodeError, ValueError, OSError):
             # 损坏回退：备份 + 默认值
             try:

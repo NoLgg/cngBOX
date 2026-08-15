@@ -165,7 +165,10 @@ class ColorPickerTool(QObject):
         self._overlay = ColorPickerOverlay(desktop, geometry)
         self._overlay.picked.connect(self._on_picked)
         self._overlay.cancelled.connect(self._on_cancelled)
+        from cng_toolbox.ui_utils import fade_in
+
         self._overlay.show()
+        fade_in(self._overlay, ms=140, slide=0)
         self._overlay.activateWindow()
 
     def _on_picked(self, hex_color: str) -> None:
