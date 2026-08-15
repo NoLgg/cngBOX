@@ -248,7 +248,10 @@ class ResizeHandle(QWidget):
 
 
 class MainWindow(QMainWindow):
-    """工具箱主面板（手绘便当盒，支持边缘拖拽调整大小 + 跨屏 DPI 自适应）。"""
+    """工具箱主面板（手绘便当盒，支持边缘拖拽调整大小）。
+
+    跨屏 DPI：依赖 Qt6 原生 Per-Monitor DPI Aware，不做手动缩放。
+    """
 
     tool_invoked = Signal(str)  # tool_id
 
@@ -265,6 +268,8 @@ class MainWindow(QMainWindow):
         # 无边框窗口：边框/背景全部由内部手绘风格呈现。
         # 注意：不加 WindowStaysOnTopHint —— 主面板不需要一直置顶，
         # 否则会压住设置窗口/其他应用（设置窗口置顶逻辑问题修复）。
+        # 跨屏 DPI：Qt6 原生 Per-Monitor DPI Aware，跨屏时内容自动适配，
+        # 不要手动按 DPR 缩放窗口尺寸（会导致跨屏时反复触发 screenChanged 越变越大）。
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window
         )
@@ -279,18 +284,13 @@ class MainWindow(QMainWindow):
                      {"n", "w"}, {"n", "e"}, {"s", "w"}, {"s", "e"}):
             self._resize_handles.append(ResizeHandle(self, dirs))
 
-        # 跨屏 DPI 自适应基准
-        self._base_dpr = self.devicePixelRatioF() or 1.0
-
         self._build()
 
     def showEvent(self, event) -> None:
-        """显示时置顶 + 淡入动画 + 挂接屏幕切换监听。"""
+        """显示时置顶 + 淡入动画。"""
         super().showEvent(event)
         self.raise_()
         self.activateWindow()
-        if self.windowHandle() is not None:
-            self.windowHandle().screenChanged.connect(self._on_screen_changed)
         # 摆放并显示边缘调整手柄
         for h in self._resize_handles:
             h.show_for(self.width(), self.height())
@@ -304,21 +304,6 @@ class MainWindow(QMainWindow):
         super().hideEvent(event)
         for h in self._resize_handles:
             h.hide()
-
-    # -- 跨屏 DPI 自适应 -----------------------------------------------------------
-
-    def _on_screen_changed(self, screen) -> None:
-        """窗口拖到不同 DPI 的屏幕时，按 DPR 比例缩放窗口尺寸，保持观感一致。"""
-        if screen is None:
-            return
-        new_dpr = screen.devicePixelRatio()
-        if abs(new_dpr - self._base_dpr) < 0.01:
-            return
-        scale = new_dpr / self._base_dpr
-        new_w = max(self.MIN_W, int(self.width() * scale))
-        new_h = max(self.MIN_H, int(self.height() * scale))
-        self.resize(new_w, new_h)
-        self._base_dpr = new_dpr
 
     # -- 边缘拖拽调整大小（由 ResizeHandle 手柄处理，见类定义） ----------------------
 
