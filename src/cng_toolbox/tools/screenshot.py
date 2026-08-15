@@ -112,7 +112,7 @@ class ScreenshotOverlay(QWidget):
             # 选区恢复原画面
             painter.drawPixmap(rect, self._desktop, rect)
             # 选区边框
-            painter.setPen(QPen(QColor("#2dd4bf"), 2))
+            painter.setPen(QPen(QColor("#3d8b80"), 2))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(rect)
             # 尺寸标注

@@ -92,10 +92,17 @@ class PinWindow(QWidget):
         preset = self._config.get("pin_border.preset", "thin")
         if preset == "glow":
             effect = QGraphicsDropShadowEffect(self)
-            color = QColor(self._config.get("pin_border.color", "#2dd4bf"))
+            color = QColor(self._config.get("pin_border.color", "#3d8b80"))
             effect.setColor(color)
-            effect.setBlurRadius(24)
+            effect.setBlurRadius(22)
             effect.setOffset(0, 0)
+            self.setGraphicsEffect(effect)
+        elif preset in ("thin", "thick", "dashed", "rounded"):
+            # 贴纸硬阴影（铅笔投影）
+            effect = QGraphicsDropShadowEffect(self)
+            effect.setColor(QColor(44, 44, 44, 90))
+            effect.setBlurRadius(0)
+            effect.setOffset(3, 3)
             self.setGraphicsEffect(effect)
         else:
             self.setGraphicsEffect(None)
@@ -105,30 +112,36 @@ class PinWindow(QWidget):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         preset = self._config.get("pin_border.preset", "thin")
         pad = self._border_width()
+        rect = self.rect()
+
+        # 纸张底色（贴纸感）
+        painter.setBrush(QColor("#ffffff"))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(rect)
 
         # 内容
-        target = self.rect().adjusted(pad, pad, -pad, -pad)
+        target = rect.adjusted(pad, pad, -pad, -pad)
         painter.drawPixmap(target, self._content)
 
-        # 边框
+        # 边框（手绘墨线 / 彩铅）
         if preset == "rounded":
-            color = QColor(self._config.get("pin_border.color", "#2dd4bf"))
+            color = QColor(self._config.get("pin_border.color", "#d99a3d"))
             pen = QPen(color, 2)
             painter.setPen(pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 12, 12)
+            painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 14, 14)
         elif preset in ("thin", "thick"):
-            color = QColor(self._config.get("pin_border.color", "#2dd4bf"))
+            color = QColor(self._config.get("pin_border.color", "#2c2c2c"))
             width = self._border_width()
             painter.setPen(QPen(color, width))
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRect(self.rect().adjusted(1, 1, -1, -1))
+            painter.drawRect(rect.adjusted(1, 1, -1, -1))
         elif preset == "dashed":
-            color = QColor(self._config.get("pin_border.color", "#2dd4bf"))
+            color = QColor(self._config.get("pin_border.color", "#2f6f66"))
             pen = QPen(color, 2, Qt.PenStyle.DashLine)
             painter.setPen(pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRect(self.rect().adjusted(2, 2, -2, -2))
+            painter.drawRect(rect.adjusted(2, 2, -2, -2))
         # none / glow：无边框
 
     # -- 交互 ------------------------------------------------------------------

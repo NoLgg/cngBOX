@@ -46,7 +46,7 @@ DEFAULTS: dict[str, Any] = {
     # 贴图边框
     "pin_border": {
         "preset": "thin",  # none | thin | thick | dashed | glow | rounded
-        "color": "#2dd4bf",
+        "color": "#3d8b80",
         "width": 2,
     },
     # 粘贴板

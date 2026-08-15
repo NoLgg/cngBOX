@@ -152,7 +152,7 @@ class HistoryPanel(QDialog):
 
         header = QHBoxLayout()
         type_label = QLabel("📄 文本" if entry["type"] == "text" else "🖼️ 图片")
-        type_label.setStyleSheet("color: #2dd4bf; font-size: 11px;")
+        type_label.setStyleSheet("color: #3d8b80; font-size: 11px;")
         header.addWidget(type_label)
         header.addStretch(1)
         time_label = QLabel(self._format_time(entry["created_at"]))

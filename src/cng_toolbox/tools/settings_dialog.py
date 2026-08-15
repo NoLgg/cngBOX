@@ -230,7 +230,7 @@ class SettingsDialog(QDialog):
         bform.addRow("预设", preset_box)
 
         color_row = QHBoxLayout()
-        color_label = QLabel(self._config.get("pin_border.color", "#2dd4bf"))
+        color_label = QLabel(self._config.get("pin_border.color", "#3d8b80"))
         color_btn = QPushButton("选择颜色…")
         color_btn.clicked.connect(
             lambda: self._on_border_color_changed(color_label)
@@ -261,7 +261,7 @@ class SettingsDialog(QDialog):
 
     def _on_border_color_changed(self, label: QLabel) -> None:
         color = QColorDialog.getColor(
-            QColor(self._config.get("pin_border.color", "#2dd4bf")), self
+            QColor(self._config.get("pin_border.color", "#3d8b80")), self
         )
         if color.isValid():
             hex_color = color.name().upper()
