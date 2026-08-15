@@ -1,0 +1,174 @@
+============================================================
+  草泥鸽工具箱 — 图标 / 形象图 生成需求清单
+  生成后交付物：图片文件（拿回来我做 HTML 原型 + 集成到应用）
+============================================================
+
+【用途说明】
+本清单列出「草泥鸽工具箱」Windows 桌面应用需要的全部视觉资产。
+你可以用任意 AI 绘图工具（Midjourney / DALL-E / 即梦 / 豆包 /
+Stable Diffusion 等）按提示词生成，也可手绘/设计软件制作。
+每项都标注了：用途、建议提示词、输出格式、尺寸要求。
+
+────────────────────────────────────────────────────────────
+一、全局风格基调（所有图都必须遵守，可复制进每条提示词）
+────────────────────────────────────────────────────────────
+  风格：游戏化、个性、可爱搞怪、圆润、现代扁平/微立体
+  配色：深色背景 #1a1d24（主面板用）；青绿主色 #2dd4bf（点缀）；
+        橙黄 #fbbf24、紫罗兰 #a78bfa 作为辅助色
+  元素：圆角、发光边缘、卡通质感、轻松幽默（贴合「草泥鸽」名字）
+  角色：一只卡通鸽子（鸽子的身体 + 草泥马式的呆萌表情 / 呆毛），
+        昵称「草泥鸽」，是应用的吉祥物
+  通用英文风格词（可拼进提示词）：
+    cute cartoon game-style mascot, rounded shapes, vibrant teal
+    and orange accents, dark navy background, glossy highlights,
+    flat design with soft gradients, high detail, 8k
+
+────────────────────────────────────────────────────────────
+二、图标类（共 7 张，全部要【透明背景 PNG】）
+────────────────────────────────────────────────────────────
+【重要】AI 出图通常不给透明背景，请提示词中写：
+  "isolated on pure white background" 或 "纯白背景、主体居中、无背景元素"
+  白色背景我回来可以一键抠成透明；纯黑背景也可以（容易抠）。
+  输出尺寸统一 1024×1024 PNG。
+
+  1) 主应用图标（exe / 桌面 / 任务栏）
+     内容：草泥鸽吉祥物头像特写，圆角方形徽章构图，青绿主色底，
+            呆萌表情，适合 16~256px 缩小后依然清晰（不要太多细节）
+     提示词：
+       "app icon, cute cartoon pigeon mascot head with funny
+       llama-like expression and tuft of hair on top, round
+       square badge composition, teal gradient background,
+       glossy, minimal details readable at small sizes, game
+       style, isolated on pure white background"
+     输出：icon-app.png（1024×1024 透明/白底）→ 我转 ICO
+
+  2) 托盘图标（系统托盘小图标，运行时常驻）
+     内容：与主图标同款草泥鸽头像，但更简洁——只保留头+呆毛，
+            高对比、纯色剪影感，缩到 16px 也清晰
+     提示词：
+       "tiny tray icon, simple silhouette of cute pigeon head
+       with tuft, bold flat teal color, minimal shape, clear
+       at 16 pixels, isolated on pure white background"
+     输出：icon-tray.png（512×512 即可，透明/白底）
+
+  3) 截图置顶工具图标（主面板卡片用，大图标 128px 展示）
+     内容：卡通截图框 + 图钉元素，草泥鸽元素融入（比如鸽子叼着
+            截图框 / 鸽子站在截图框上），青绿色调
+     提示词：
+       "game app tool icon, cute cartoon pigeon standing on a
+       screenshot frame with a pushpin, teal and orange colors,
+       dark navy background, rounded, glossy, playful,
+       isolated on pure white background"
+     输出：icon-tool-screenshot.png（1024×1024）
+
+  4) 粘贴板工具图标
+     内容：卡通剪贴板 + 历史时间线/列表元素，鸽子形象融入
+            （鸽子翅膀护着剪贴板），青绿色调
+     提示词：
+       "game app tool icon, cute cartoon pigeon hugging a
+       clipboard with list lines, teal and orange colors,
+       dark navy background, rounded, glossy, playful,
+       isolated on pure white background"
+     输出：icon-tool-clipboard.png（1024×1024）
+
+  5) 取色器工具图标
+     内容：卡通滴管/取色吸管 + 色块，鸽子元素融入（鸽子叼着滴管），
+            青绿色调
+     提示词：
+       "game app tool icon, cute cartoon pigeon holding an
+       eyedropper with colorful color swatches, teal and
+       orange colors, dark navy background, rounded, glossy,
+       playful, isolated on pure white background"
+     输出：icon-tool-colorpicker.png（1024×1024）
+
+  6) 设置图标
+     内容：游戏化齿轮，可带鸽子元素（齿轮中间是鸽子头/鸽子站在
+            齿轮上），青绿色调
+     提示词：
+       "game settings icon, cute cartoon gear with pigeon
+       head in the center, teal and orange colors, dark navy
+       background, rounded, glossy, playful,
+       isolated on pure white background"
+     输出：icon-settings.png（1024×1024）
+
+  7) 贴图/置顶图标（托盘菜单「关闭全部贴图」等小按钮用）
+     内容：图钉 + 图片缩略图，简洁图标风
+     提示词：
+       "simple game icon, pushpin on a small photo frame,
+       flat teal color, minimal, isolated on pure white
+       background"
+     输出：icon-pin.png（512×512）
+
+────────────────────────────────────────────────────────────
+三、形象图 / 插画类（共 3 张，PNG 即可，可带背景）
+────────────────────────────────────────────────────────────
+  8) 草泥鸽吉祥物立绘（主面板欢迎区 / 关于页）
+     内容：草泥鸽全身立绘，呆萌站立姿态，青绿色身体 + 橙色呆毛，
+            游戏化质感，可带简单背景（深色渐变为佳）
+     提示词：
+       "full body cute cartoon pigeon mascot, standing pose,
+       funny llama-like expression, teal body with orange
+       tuft of hair, game style mascot art, dark navy
+       gradient background, glossy, high detail"
+     输出：mascot-full.png（1024×1024）
+
+  9) 粘贴板空状态插画（历史为空时显示）
+     内容：草泥鸽坐在空剪贴板旁，一副「复制点东西嘛」的期待表情，
+            深色背景
+     提示词：
+       "cute cartoon pigeon sitting next to an empty
+       clipboard, expecting look, game style illustration,
+       dark navy background, teal and orange accents,
+       glossy, high detail"
+     输出：art-clipboard-empty.png（1024×1024）
+
+  10) 启动/横幅图（主面板顶部横幅，横向）
+     内容：草泥鸽张开翅膀 + 工具箱元素（截图框/剪贴板/滴管漂浮），
+            横幅构图，文字留白（不要文字，我后期加标题）
+     提示词：
+       "wide banner illustration, cute cartoon pigeon with
+       spread wings surrounded by floating toolbox elements
+       (screenshot frame, clipboard, eyedropper), game style,
+       dark navy background, teal and orange accents, no
+       text, glossy"
+     输出：art-banner.png（2048×1024 或 16:9 横图）
+
+────────────────────────────────────────────────────────────
+四、输出格式汇总（交付给我时的要求）
+────────────────────────────────────────────────────────────
+  所有图片请按以下命名保存到一个文件夹（如 project/assets/raw/）：
+
+  icon-app.png               1024×1024（白底或透明）
+  icon-tray.png              512×512
+  icon-tool-screenshot.png   1024×1024
+  icon-tool-clipboard.png    1024×1024
+  icon-tool-colorpicker.png  1024×1024
+  icon-settings.png          1024×1024
+  icon-pin.png               512×512
+  mascot-full.png            1024×1024
+  art-clipboard-empty.png    1024×1024
+  art-banner.png             2048×1024 横向
+
+  格式要求：
+  - 全部 PNG（不要 JPG，PNG 保留透明通道/无损）
+  - 图标类尽量白底（我抠图成透明）或直接透明
+  - 每张图给我 1 个版本即可；如果工具能出多种风格，
+    优先选「贴近青绿主色 + 圆润可爱」的那版
+
+────────────────────────────────────────────────────────────
+五、我拿到图之后会做的事
+────────────────────────────────────────────────────────────
+  1. 白底抠透明（自动：纯白像素 → alpha=0，边缘羽化）
+  2. 图标缩放多尺寸 + 生成 .ico（16/24/32/48/64/128/256）
+  3. 替换代码里的 emoji 占位图标（托盘、主面板卡片、菜单）
+  4. 生成 HTML 原型图（html 文件，浏览器直接打开）：
+     - 主面板（工具箱卡片网格 + 横幅 + 吉祥物）
+     - 粘贴板历史面板（空状态插画 + 列表 + 图片预览）
+     - 设置面板（各分组 + 贴图边框预览）
+     - 托盘菜单、贴图示例（置顶贴图 + 边框样式展示）
+     - 取色器界面示意
+  5. 原型确认后，把正式图标集成进应用代码并重新打包 exe
+
+  如果某张图没生成成功或风格不对，告诉我缺哪张，你可以只补
+  那一张，我继续处理。
+============================================================
