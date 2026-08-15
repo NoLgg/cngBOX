@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QPropertyAnimation, Qt, Signal
+from PySide6.QtCore import QPoint, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
@@ -51,8 +51,61 @@ def _hard_shadow(widget: QWidget, offset: int = 3, blur: int = 0) -> None:
     widget.setGraphicsEffect(effect)
 
 
+class AdaptivePixmapLabel(QLabel):
+    """自适应图片标签：随可用空间等比缩放（Smooth），带缩放缓存。
+
+    性能：窗口 resize 时只计算目标尺寸，变化 < 4px 直接复用缓存，
+    避免频繁全图缩放重绘（大图尤其关键）。
+
+    max_size：可选上限（如横幅限高），防止图片把布局撑爆。
+    """
+
+    def __init__(self, source: QPixmap, max_size: QSize | None = None,
+                 parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._source = source
+        self._max_size = max_size or QSize(100000, 100000)
+        self._scaled: QPixmap | None = None
+        self._last_size = QSize(0, 0)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setMinimumSize(1, 1)  # 允许缩小（不要固定大尺寸，避免撑爆布局）
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._update_pixmap()
+
+    def _update_pixmap(self) -> None:
+        if self._source.isNull():
+            return
+        avail = self.size()
+        if avail.width() < 2 or avail.height() < 2:
+            return
+        # 目标 = 可用空间 ∩ 上限，保持比例
+        cap_w = min(avail.width(), self._max_size.width())
+        cap_h = min(avail.height(), self._max_size.height())
+        target = QSize(self._source.width(), self._source.height())
+        target.scale(QSize(cap_w, cap_h), Qt.AspectRatioMode.KeepAspectRatio)
+        if (self._scaled is not None
+                and abs(target.width() - self._last_size.width()) < 4
+                and abs(target.height() - self._last_size.height()) < 4):
+            return  # 缓存命中，跳过重缩放
+        self._last_size = target
+        self._scaled = self._source.scaled(
+            target, Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.setPixmap(self._scaled)
+
+
 class SketchCard(QFrame):
-    """手绘虚线边框卡片（悬停上浮动画）。"""
+    """手绘虚线边框卡片。
+
+    阴影用 QSS 非均匀边框模拟（右下粗边 = 硬投影），
+    不用 QGraphicsDropShadowEffect —— resize 时 effect 离屏渲染
+    是大开销（每卡 ~1.2ms），QSS 边框零成本。
+    hover 反馈：投影加深 + 背景变化（纯视觉，不移动 pos，
+    避免与 QGridLayout 冲突导致重叠）。
+    """
 
     clicked = Signal(str)  # tool_id
 
@@ -61,30 +114,35 @@ class SketchCard(QFrame):
         self._tool_id = tool_id
         self.setObjectName("Card")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumSize(170, 150)
-        self._hover_anim: QPropertyAnimation | None = None
-        _hard_shadow(self)
+        self.setMinimumSize(150, 140)
+        self._apply_style(hover=False)
+
+    def _apply_style(self, hover: bool) -> None:
+        if hover:
+            self.setStyleSheet(
+                f"QFrame#Card {{ background: {PAPER_DEEP};"
+                f"border: 2px dashed {INK}; border-radius: 8px;"
+                f"border-right: 8px solid rgba(44,44,44,150);"
+                f"border-bottom: 8px solid rgba(44,44,44,150); }}"
+            )
+        else:
+            self.setStyleSheet(
+                f"QFrame#Card {{ background: {PAPER};"
+                f"border: 2px dashed {INK}; border-radius: 8px;"
+                f"border-right: 6px solid rgba(44,44,44,100);"
+                f"border-bottom: 6px solid rgba(44,44,44,100); }}"
+            )
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._tool_id:
             self.clicked.emit(self._tool_id)
 
     def enterEvent(self, event) -> None:
-        """悬停：轻微上浮（便当盒交互反馈）。"""
-        self._animate_hover(-3)
+        """悬停：投影加深 + 背景变化（纯视觉）。"""
+        self._apply_style(hover=True)
 
     def leaveEvent(self, event) -> None:
-        self._animate_hover(0)
-
-    def _animate_hover(self, dy: int) -> None:
-        from PySide6.QtCore import QEasingCurve
-
-        self._hover_anim = QPropertyAnimation(self, b"pos", self)
-        self._hover_anim.setDuration(110)
-        self._hover_anim.setStartValue(self.pos())
-        self._hover_anim.setEndValue(QPoint(self.x(), self.y() + dy))
-        self._hover_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._hover_anim.start()
+        self._apply_style(hover=False)
 
 
 class TitleBar(QWidget):
@@ -257,9 +315,9 @@ class MainWindow(QMainWindow):
 
     # 边缘拖拽热区宽度（px）
     RESIZE_EDGE = 7
-    # 最小窗口尺寸（保证布局不挤爆）
+    # 最小窗口尺寸（保证布局不挤爆：标题52 + 网格3行×140 + 间距 + footer）
     MIN_W = 760
-    MIN_H = 540
+    MIN_H = 640
 
     def __init__(self, registry: ToolRegistry, hotkey_texts: dict[str, str]) -> None:
         super().__init__()
@@ -276,7 +334,7 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("草泥鸽工具箱")
         self.setMinimumSize(self.MIN_W, self.MIN_H)
-        self.resize(860, 620)
+        self.resize(880, 700)
 
         # 边缘拖拽 resize：8 个透明手柄
         self._resize_handles: list[ResizeHandle] = []
@@ -308,15 +366,18 @@ class MainWindow(QMainWindow):
     # -- 边缘拖拽调整大小（由 ResizeHandle 手柄处理，见类定义） ----------------------
 
     def _build(self) -> None:
-        # 外层容器：纸张背景 + 墨线边框 + 贴纸阴影（模拟窗口边框）
+        # 外层容器：纸张背景 + 墨线边框 + QSS 非均匀边框模拟贴纸投影。
+        # 性能：不用 QGraphicsDropShadowEffect（resize 时离屏渲染开销 ~9ms/次），
+        # 用右下粗边框模拟硬阴影，视觉接近且零额外成本。
         outer = QWidget()
         outer.setObjectName("WindowShell")
         outer.setStyleSheet(
             f"#WindowShell {{ background: {PAPER};"
-            f"border: 3px solid {INK}; border-radius: 10px; }}"
+            f"border: 2px solid {INK}; border-radius: 10px;"
+            f"border-right: 7px solid rgba(44,44,44,110);"
+            f"border-bottom: 7px solid rgba(44,44,44,110); }}"
         )
         self.setCentralWidget(outer)
-        _hard_shadow(outer, offset=8, blur=0)
 
         main_layout = QVBoxLayout(outer)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -335,13 +396,18 @@ class MainWindow(QMainWindow):
         body.setSpacing(16)
         main_layout.addWidget(content, 1)
 
-        # 横幅贴纸（白底图 + 虚线框 + 轻微旋转感）
+        # 横幅贴纸（白底图 + 虚线框；自适应宽度）
         banner = self._make_banner()
         body.addWidget(banner)
 
-        # 便当盒网格
+        # 便当盒网格（4 列等宽伸缩，窗口放大卡片均匀变大）
         grid = QGridLayout()
         grid.setSpacing(16)
+        for col in range(4):
+            grid.setColumnStretch(col, 1)
+        grid.setRowStretch(0, 1)
+        grid.setRowStretch(1, 1)
+        grid.setRowStretch(2, 1)
         self._layout_bento(grid)
         body.addLayout(grid, 1)
 
@@ -357,20 +423,19 @@ class MainWindow(QMainWindow):
 
     def _make_banner(self) -> QWidget:
         wrap = QFrame()
+        # QSS 投影代替 QGraphicsDropShadowEffect（性能）
         wrap.setStyleSheet(
             f"QFrame {{ background: #ffffff; border: 2px solid {INK};"
-            f"border-radius: 8px; }}"
+            f"border-radius: 8px;"
+            f"border-right: 5px solid rgba(44,44,44,90);"
+            f"border-bottom: 5px solid rgba(44,44,44,90); }}"
         )
-        _hard_shadow(wrap, offset=3)
         lay = QVBoxLayout(wrap)
         lay.setContentsMargins(0, 0, 0, 0)
         img = load_pixmap("banner-startup")
         if not img.isNull():
-            label = QLabel()
-            # 固定高度等比缩放（scaledToHeight 完整保留比例，不裁切），居中显示
-            label.setPixmap(img.scaledToHeight(200, Qt.TransformationMode.SmoothTransformation))
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setScaledContents(False)
+            # 自适应：随窗口缩放（限高 220），矮窗口时自动让位给网格，绝不撑爆布局
+            label = AdaptivePixmapLabel(img, max_size=QSize(4096, 220))
             lay.addWidget(label)
         else:
             t = QLabel("草泥鸽工具箱 · 一只鸽子全搞定")
@@ -388,15 +453,8 @@ class MainWindow(QMainWindow):
         m_layout.setSpacing(4)
         mascot_img = load_pixmap("mascot-full")
         if not mascot_img.isNull():
-            m_label = QLabel()
-            m_pm = mascot_img.scaled(
-                220, 220, Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            m_label.setPixmap(m_pm)
-            # 防止布局压缩导致图片被裁
-            m_label.setMinimumSize(m_pm.size())
-            m_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            # 自适应：随卡片空间缩放，不再固定 220px（避免小窗口撑爆布局重叠）
+            m_label = AdaptivePixmapLabel(mascot_img)
             m_layout.addWidget(m_label, 1)
         m_name = QLabel("草泥鸽 · 咕咕")
         m_name.setStyleSheet(
@@ -454,13 +512,7 @@ class MainWindow(QMainWindow):
         icon_lay.setContentsMargins(6, 6, 6, 6)
         pixmap = load_pixmap(TOOL_ICONS.get(tool_id, ""))
         if not pixmap.isNull():
-            icon_label = QLabel()
-            icon_pm = pixmap.scaled(
-                44, 44, Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            icon_label.setPixmap(icon_pm)
-            icon_label.setMinimumSize(icon_pm.size())
+            icon_label = AdaptivePixmapLabel(pixmap)
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
 
@@ -515,13 +567,7 @@ class MainWindow(QMainWindow):
         icon_lay.setContentsMargins(4, 4, 4, 4)
         pixmap = load_pixmap("icon-pin")
         if not pixmap.isNull():
-            icon_label = QLabel()
-            icon_pm = pixmap.scaled(
-                34, 34, Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            icon_label.setPixmap(icon_pm)
-            icon_label.setMinimumSize(icon_pm.size())
+            icon_label = AdaptivePixmapLabel(pixmap)
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
         text_lay = QVBoxLayout()
@@ -552,13 +598,7 @@ class MainWindow(QMainWindow):
         icon_lay.setContentsMargins(4, 4, 4, 4)
         pixmap = load_pixmap(TOOL_ICONS["settings"])
         if not pixmap.isNull():
-            icon_label = QLabel()
-            icon_pm = pixmap.scaled(
-                34, 34, Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            icon_label.setPixmap(icon_pm)
-            icon_label.setMinimumSize(icon_pm.size())
+            icon_label = AdaptivePixmapLabel(pixmap)
             icon_lay.addWidget(icon_label)
         layout.addWidget(icon_box)
         text_lay = QVBoxLayout()
