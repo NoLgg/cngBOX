@@ -1,5 +1,5 @@
 workflow: full
-phase: build
+phase: verify
 build_mode: direct
 build_pause: null
 isolation: branch
@@ -16,3 +16,5 @@ archived: false
 handoff_context: openspec/changes/cng-toolbox/.comet/handoff/design-context.json
 handoff_hash: 93a6b1ea1a1438c413a1edce5567989578788eeb659c99745eecbdcdc7fe41e2
 direct_override: true
+build_command: py -3.11 -m pytest tests/ -q
+verify_command: py -3.11 -m pytest tests/ -q
