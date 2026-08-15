@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>草泥鸽工具箱 — 手绘便当盒原型</title>
+<style>
+/* ============================================================
+   草泥鸽工具箱 · 原型 v2
+   风格：铅笔手绘风（Sketch Style）× 便当盒布局（Bento Grid）
+   参考 StyleKit：布局.txt / 风格.txt
+   ============================================================ */
+:root {
+  /* —— 纸张色系 —— */
+  --paper: #f5f0e8;          /* 背景主色（素描纸） */
+  --paper-deep: #e8e2d8;     /* 背景辅色 */
+  --paper-input: #faf5ed;    /* 输入框底色 */
+  --ink: #2c2c2c;            /* 墨线 / 文字主色 */
+  --ink-soft: #5a5a5a;       /* 正文辅色 */
+  --ink-faint: #8a8a8a;      /* 弱化色 */
+  /* —— 彩铅点缀（低饱和，禁止霓虹） —— */
+  --teal: #3d8b80;           /* 彩铅青绿 */
+  --teal-deep: #2f6f66;
+  --orange: #d99a3d;         /* 彩铅橙黄 */
+  --violet: #8b7bb8;         /* 彩铅紫 */
+  --red: #c96a5e;            /* 彩铅红 */
+  --green: #6b9e62;          /* 彩铅绿 */
+  /* —— 手绘阴影：硬边铅笔投影 —— */
+  --shadow-sm: 2px 2px 0 rgba(44,44,44,.28);
+  --shadow-md: 3px 3px 0 rgba(44,44,44,.3);
+  --shadow-lg: 4px 4px 0 rgba(44,44,44,.32);
+  --shadow-hover: 4px 4px 0 rgba(44,44,44,.38);
+  /* —— 圆角：手绘风小圆角（禁止 rounded-xl/2xl/full） —— */
+  --radius: 7px;
+  /* —— 字体：手写感 —— */
+  --font-hand: "KaiTi", "楷体", "STKaiti", "Comic Sans MS", cursive;
+  --font-body: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(44,44,44,.035) 1px, transparent 1.5px),
+    radial-gradient(circle at 78% 82%, rgba(44,44,44,.035) 1px, transparent 1.5px),
+    radial-gradient(circle at 55% 40%, rgba(44,44,44,.028) 1px, transparent 1.5px),
+    var(--paper);
+  background-size: 220px 220px, 180px 180px, 260px 260px, auto;
+  padding: 28px 20px 60px;
+  line-height: 1.55;
+  position: relative;
+}
+/* 纸张纹理：细网格线 */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 31px, rgba(44,44,44,.045) 31px 32px),
+              repeating-linear-gradient(90deg, transparent 0 31px, rgba(44,44,44,.045) 31px 32px);
+  opacity: .5;
+  z-index: 0;
+}
+body > * { position: relative; z-index: 1; }
+
+/* —— 手绘标题 —— */
+.page-head { text-align: center; margin-bottom: 34px; }
+.page-head h1 {
+  font-family: var(--font-hand);
+  font-size: 40px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  display: inline-block;
+  position: relative;
+  transform: rotate(-1.2deg);
+}
+.page-head h1::after {
+  content: '';
+  position: absolute; left: 4%; right: 4%; bottom: -8px;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 8' preserveAspectRatio='none'%3E%3Cpath d='M0 6 Q25 0 50 6 T100 6 T150 6 T200 6' fill='none' stroke='%23d99a3d' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+}
+.page-head p {
+  margin-top: 16px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-family: var(--font-hand);
+  letter-spacing: 1px;
+}
+.page-head p b { color: var(--teal-deep); font-weight: bold; }
+
+/* —— 标签页 —— */
+.tabs {
+  display: flex; justify-content: center; gap: 12px;
+  margin-bottom: 30px; flex-wrap: wrap;
+}
+.tab-btn {
+  font-family: var(--font-hand);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  color: var(--ink);
+  padding: 8px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .08s, box-shadow .08s;
+}
+.tab-btn:hover { transform: translate(-1px,-2px); box-shadow: var(--shadow-hover); }
+.tab-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  transform: rotate(-1deg);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fade-in .18s ease-out; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+/* —— 舞台画布（窗口模拟） —— */
+.stage {
+  max-width: 960px; margin: 0 auto 36px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+  position: relative;
+}
+.stage::before {
+  content: '';
+  position: absolute; top: -14px; right: 34px;
+  width: 110px; height: 28px;
+  background: var(--paper-deep);
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  transform: rotate(2.5deg);
+  z-index: 3;
+  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-hand); font-size: 12px; color: var(--ink-soft);
+}
+.stage-title { font-family: var(--font-hand); font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+.stage-sub { color: var(--ink-soft); font-size: 12.5px; margin-bottom: 18px; font-family: var(--font-hand); }
+
+/* ============================================================
+   主面板 — 便当盒（Bento Grid）
+   ============================================================ */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  grid-auto-flow: dense;
+}
+.bento-card {
+  background: var(--paper);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: transform .08s, box-shadow .08s;
+  cursor: pointer;
+}
+.bento-card:hover { transform: translate(-2px,-3px) rotate(-.5deg); box-shadow: var(--shadow-hover); }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+.row-span-2 { grid-row: span 2; }
+
+/* 横幅贴纸（白底图贴纸化） */
+.sticker-banner {
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transform: rotate(-.4deg);
+  position: relative;
+}
+.sticker-banner img { width: 100%; display: block; }
+.sticker-banner .sticker-text {
+  position: absolute; left: 18px; top: 50%; transform: translateY(-50%) rotate(-1deg);
+  font-family: var(--font-hand);
+  color: var(--ink);
+  text-shadow: 0 1px 0 #fff, 1px 2px 0 rgba(255,255,255,.9);
+}
+.sticker-banner .sticker-text h2 { font-size: 26px; font-weight: bold; letter-spacing: 2px; }
+.sticker-banner .sticker-text p { font-size: 14px; color: var(--teal-deep); font-weight: bold; margin-top: 4px; }
+
+/* 工具卡 */
+.tool-card .icon-box {
+  width: 64px; height: 64px;
+  background: var(--paper-deep);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  transform: rotate(-1deg);
+}
+.tool-card .icon-box img { width: 100%; height: 100%; object-fit: contain; }
+.tool-card h3 { font-family: var(--font-hand); font-size: 17px; font-weight: bold; }
+.tool-card .desc { color: var(--ink-soft); font-size: 12px; margin-top: 3px; }
+.tool-card .hotkey {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--paper-input);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  color: var(--teal-deep);
+  box-shadow: var(--shadow-sm);
+  transform: rotate(1.2deg);
+}
+
+/* 吉祥物卡 */
+.mascot-card {
+  background: var(--paper-deep);
+  border-style: solid;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px;
+}
+.mascot-card img { width: 100%; max-height: 230px; object-fit: contain; transform: rotate(-1deg); }
+.mascot-card .m-name { font-family: var(--font-hand); font-size: 18px; font-weight: bold; color: var(--orange); }
+.mascot-card .m-tag { font-family: var(--font-hand); font-size: 12.5px; color: var(--ink-soft); }
+
+/* 状态卡 */
+.status-card { display: flex; align-items: center; gap: 12px; }
+.status-card .num { font-family: var(--font-hand); font-size: 30px; font-weight: bold; color: var(--teal-deep); }
+.status-card .label { color: var(--ink-soft); font-size: 12px; }
+.status-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 涂鸦装饰 */
+.doodle { position: absolute; pointer-events: none; }
+.doodle-star { font-size: 22px; color: var(--orange); transform: rotate(12deg); }
+.doodle-circle {
+  width: 26px; height: 26px;
+  border: 2px dashed var(--violet);
+  border-radius: 50%;
+}
+.doodle-arrow { color: var(--teal); font-size: 20px; transform: rotate(-8deg); }
+
+/* ============================================================
+   粘贴板
+   ============================================================ */
+.clip-topbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-box {
+  flex: 1; min-width: 200px;
+  background: var(--paper-input);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-family: var(--font-hand);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.search-box:focus { outline: none; box-shadow: var(--shadow-hover); }
+.search-box::placeholder { color: var(--ink-faint); }
+.filter-chip {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 7px 16px;
+  font-family: var(--font-hand);
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .08s;
+}
+.filter-chip:hover { transform: translateY(-1px); }
+.filter-chip.active { background: var(--ink); color: var(--paper); }
+
+.history-item {
+  display: flex; gap: 14px; align-items: center;
+  background: var(--paper);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .08s, box-shadow .08s;
+}
+.history-item:hover { transform: translate(-1px,-2px); box-shadow: var(--shadow-hover); }
+.history-item:nth-child(odd) { transform: rotate(-.25deg); }
+.history-item:nth-child(even) { transform: rotate(.3deg); }
+.history-item:hover:nth-child(odd) { transform: translate(-1px,-2px) rotate(-.25deg); }
+.history-item:hover:nth-child(even) { transform: translate(-1px,-2px) rotate(.3deg); }
+.history-item img.thumb {
+  width: 84px; height: 84px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--paper-deep);
+  border: 2px solid var(--ink);
+}
+.history-item .type { font-size: 11px; font-weight: bold; color: var(--teal-deep); margin-bottom: 3px; }
+.history-item .content { font-size: 13px; color: var(--ink); }
+.history-item .meta { margin-left: auto; text-align: right; white-space: nowrap; }
+.history-item .time { color: var(--ink-faint); font-size: 11px; }
+.history-item .pin-badge { color: var(--orange); font-size: 14px; margin-top: 2px; }
+
+.empty-state {
+  text-align: center; padding: 26px 16px;
+  font-family: var(--font-hand);
+}
+.empty-state img {
+  width: 200px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  transform: rotate(-1.2deg);
+  margin-bottom: 14px;
+}
+.empty-state h3 { font-size: 19px; margin-bottom: 4px; }
+.empty-state p { color: var(--ink-soft); font-size: 13px; }
+
+/* ============================================================
+   贴图与边框
+   ============================================================ */
+.pin-stage {
+  background: var(--paper-deep);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 30px 24px;
+  min-height: 300px;
+  position: relative;
+  box-shadow: var(--shadow-sm) inset;
+  margin-bottom: 18px;
+}
+.pin-demo {
+  position: absolute;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: move;
+  user-select: none;
+  box-shadow: var(--shadow-md);
+}
+.pin-demo img { width: 100%; display: block; }
+.pin-demo .pin-title {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(44,44,44,.85);
+  color: var(--paper);
+  font-size: 10.5px;
+  font-family: var(--font-hand);
+  padding: 2px 8px;
+}
+/* 手绘贴图边框 */
+.pin-b-thin { border: 2px solid var(--ink); }
+.pin-b-thick { border: 5px solid var(--ink); }
+.pin-b-dashed { border: 2.5px dashed var(--teal-deep); }
+.pin-b-glow { box-shadow: 0 0 18px 3px rgba(61,139,128,.55), var(--shadow-md); border: 1px solid var(--teal); }
+.pin-b-rounded { border: 2px solid var(--orange); border-radius: 14px; }
+.pin-b-none { border: 1px solid rgba(44,44,44,.15); }
+
+.border-presets { display: flex; gap: 12px; flex-wrap: wrap; }
+.border-preset {
+  flex: 1; min-width: 100px;
+  background: var(--paper);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .08s;
+}
+.border-preset:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.border-preset .preview {
+  height: 52px;
+  border-radius: 5px;
+  background: #fff;
+  margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.border-preset .preview img { max-width: 34px; max-height: 34px; }
+.border-preset .name { font-family: var(--font-hand); font-size: 12.5px; font-weight: bold; }
+
+/* ============================================================
+   设置
+   ============================================================ */
+.settings-wrap { max-width: 720px; margin: 0 auto; }
+.settings-group {
+  background: var(--paper);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.settings-group h4 {
+  font-family: var(--font-hand);
+  font-size: 15.5px;
+  font-weight: bold;
+  color: var(--teal-deep);
+  margin-bottom: 10px;
+  display: inline-block;
+  border-bottom: 3px solid var(--orange);
+  padding-bottom: 2px;
+}
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1.5px dashed rgba(44,44,44,.25);
+  gap: 12px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row .label { font-size: 13.5px; font-weight: 500; }
+.settings-row .desc { color: var(--ink-soft); font-size: 11.5px; margin-top: 1px; }
+.hotkey-input {
+  background: var(--paper-input);
+  border: 2px dashed var(--ink);
+  border-radius: 5px;
+  padding: 4px 12px;
+  font-family: monospace;
+  font-size: 12.5px;
+  color: var(--teal-deep);
+  min-width: 130px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+/* 手绘开关 */
+.toggle {
+  width: 46px; height: 24px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper-deep);
+  position: relative;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background .1s;
+}
+.toggle::after {
+  content: '✗';
+  position: absolute; top: 50%; left: 4px;
+  transform: translateY(-50%);
+  font-size: 13px; font-weight: bold; color: var(--red);
+}
+.toggle.on { background: var(--teal); }
+.toggle.on::after {
+  content: '✓';
+  left: auto; right: 4px;
+  color: var(--paper);
+}
+/* 色板 */
+.swatch-row { display: flex; gap: 10px; }
+.swatch {
+  width: 30px; height: 30px;
+  border-radius: 5px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .08s;
+}
+.swatch:hover { transform: translateY(-2px) rotate(3deg); }
+.swatch.active { outline: 3px solid var(--orange); }
+
+/* ============================================================
+   托盘
+   ============================================================ */
+.tray-layout { display: flex; justify-content: center; gap: 56px; align-items: flex-start; flex-wrap: wrap; }
+.tray-menu {
+  width: 230px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+}
+.tray-menu .item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: 5px;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background .08s;
+}
+.tray-menu .item:hover { background: var(--paper-deep); }
+.tray-menu .item img { width: 22px; height: 22px; object-fit: contain; }
+.tray-menu .sep { height: 1.5px; background: var(--ink); opacity: .3; margin: 5px 8px; }
+.tray-menu .item.quit { color: var(--red); }
+.tray-menu .item.quit:hover { background: var(--red); color: var(--paper); }
+.tray-side { text-align: center; }
+.icon-show {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 16px 22px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 14px;
+  transform: rotate(-.8deg);
+}
+.icon-show img { width: 64px; height: 64px; object-fit: contain; }
+.icon-show p { font-family: var(--font-hand); font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+/* ============================================================
+   取色器
+   ============================================================ */
+.picker-stage {
+  background:
+    repeating-linear-gradient(45deg, rgba(44,44,44,.05) 0 2px, transparent 2px 8px),
+    var(--paper-deep);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  min-height: 340px;
+  position: relative;
+  box-shadow: var(--shadow-sm) inset;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.picker-stage .pseudo-screen {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-hand);
+  color: rgba(44,44,44,.25);
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+.magnifier {
+  position: absolute;
+  top: 34px; right: 70px;
+  width: 170px; height: 170px;
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: var(--shadow-lg);
+  z-index: 2;
+  overflow: hidden;
+  transform: rotate(1deg);
+}
+.magnifier .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: 100%;
+}
+.magnifier .grid div { border: 1px solid rgba(44,44,44,.2); }
+.magnifier .cross {
+  position: absolute; inset: 0;
+}
+.magnifier .cross::before, .magnifier .cross::after {
+  content: ''; position: absolute; background: rgba(255,255,255,.85); mix-blend-mode: difference;
+}
+.magnifier .cross::before { width: 100%; height: 2px; top: 50%; }
+.magnifier .cross::after { width: 2px; height: 100%; left: 50%; }
+.color-panel {
+  position: absolute;
+  bottom: 18px; left: 18px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-md);
+  transform: rotate(-.6deg);
+  z-index: 2;
+}
+.color-panel .hex-row { display: flex; align-items: center; gap: 10px; }
+.color-panel .swatch-big {
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  border: 2px solid var(--ink);
+  background: #3d8b80;
+}
+.color-panel .hex { font-family: monospace; font-size: 19px; font-weight: bold; color: var(--teal-deep); }
+.color-panel .rgb { color: var(--ink-soft); font-size: 12px; font-family: monospace; margin-top: 3px; }
+.color-panel .hint { color: var(--ink-faint); font-size: 11px; margin-top: 4px; font-family: var(--font-hand); }
+
+.footer-note {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-top: 46px;
+  border-top: 2px dashed rgba(44,44,44,.3);
+  padding-top: 18px;
+  font-family: var(--font-hand);
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>草泥鸽工具箱</h1>
+  <p>手绘便当盒原型 · <b>Sketch Bento</b> · 截图 / 粘贴板 / 取色器 · 一只鸽子全搞定</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="main">🏠 主面板</button>
+  <button class="tab-btn" data-tab="clipboard">📋 粘贴板</button>
+  <button class="tab-btn" data-tab="pin">📌 贴图边框</button>
+  <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
+  <button class="tab-btn" data-tab="tray">🖥️ 托盘</button>
+  <button class="tab-btn" data-tab="picker">🎨 取色器</button>
+</div>
+
+<!-- ============ 主面板 ============ -->
+<div class="tab-panel active" id="tab-main">
+  <div class="stage" style="max-width:1020px;">
+    <span class="doodle doodle-star" style="top:-12px;left:30px;">✦</span>
+    <span class="doodle doodle-circle" style="bottom:16px;right:26px;"></span>
+    <span class="doodle doodle-arrow" style="top:60px;right:60px;">➜</span>
+    <div class="stage-title">主面板 · 便当盒</div>
+    <div class="stage-sub">不规则网格：大卡放重点（吉祥物 / 横幅），小卡放工具入口</div>
+
+    <div class="bento">
+      <!-- 横幅：全宽贴纸 -->
+      <div class="bento-card col-span-4" style="border-style:solid;padding:6px;box-shadow:var(--shadow-md);">
+        <div class="sticker-banner">
+          <img src="assets/icons/banner-startup.png" alt="启动横幅">
+          <div class="sticker-text">
+            <h2>草泥鸽工具箱</h2>
+            <p>截图 · 粘贴板 · 取色器 —— 咕咕一下全搞定</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 吉祥物大卡 -->
+      <div class="bento-card mascot-card col-span-2 row-span-2">
+        <img src="assets/icons/mascot-full.png" alt="草泥鸽吉祥物">
+        <div class="m-name">草泥鸽 · 咕咕</div>
+        <div class="m-tag">看板娘 · 身兼数职 · 只吃小米</div>
+      </div>
+
+      <!-- 工具卡 -->
+      <div class="bento-card tool-card">
+        <span class="hotkey">Ctrl+Shift+A</span>
+        <div class="icon-box"><img src="assets/icons/icon-tool-screenshot.png" alt="截图置顶"></div>
+        <h3>截图置顶</h3>
+        <div class="desc">框选屏幕 · 截图即钉</div>
+      </div>
+      <div class="bento-card tool-card">
+        <span class="hotkey">Ctrl+Shift+V</span>
+        <div class="icon-box"><img src="assets/icons/icon-tool-clipboard.png" alt="粘贴板"></div>
+        <h3>粘贴板</h3>
+        <div class="desc">剪贴板历史 · 贴屏</div>
+      </div>
+      <div class="bento-card tool-card">
+        <span class="hotkey">Ctrl+Shift+C</span>
+        <div class="icon-box"><img src="assets/icons/icon-tool-colorpicker.png" alt="取色器"></div>
+        <h3>取色器</h3>
+        <div class="desc">屏幕取色 · 一键复制</div>
+      </div>
+
+      <!-- 状态卡 -->
+      <div class="bento-card status-card">
+        <span class="status-dot"></span>
+        <div>
+          <div class="num">3</div>
+          <div class="label">贴图在屏</div>
+        </div>
+      </div>
+      <div class="bento-card status-card">
+        <span class="status-dot"></span>
+        <div>
+          <div class="num">128</div>
+          <div class="label">今日剪贴板记录</div>
+        </div>
+      </div>
+
+      <!-- 设置入口卡 -->
+      <div class="bento-card tool-card col-span-2">
+        <span class="hotkey">Ctrl+Shift+P</span>
+        <div class="icon-box" style="width:48px;height:48px;"><img src="assets/icons/icon-settings.png" alt="设置"></div>
+        <h3>设置</h3>
+        <div class="desc">热键 · 外观 · 贴图边框 · 开机自启 · 工具开关</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 粘贴板 ============ -->
+<div class="tab-panel" id="tab-clipboard">
+  <div class="stage" style="max-width:720px;">
+    <span class="doodle doodle-star" style="top:-10px;right:40px;">✧</span>
+    <div class="stage-title">粘贴板 · 剪贴板历史</div>
+    <div class="stage-sub">搜索 / 筛选 / 固定 / 单击复制 / 双击图片放大预览</div>
+
+    <div class="clip-topbar">
+      <input class="search-box" placeholder="✏️ 搜索历史…" value="草泥">
+      <span class="filter-chip">全部</span>
+      <span class="filter-chip active">文本</span>
+      <span class="filter-chip">图片</span>
+    </div>
+
+    <div class="history-item">
+      <div style="flex:1;">
+        <div class="type">📄 文本</div>
+        <div class="content">草泥鸽工具箱使用说明：按 Ctrl+Shift+A 截图，松开即钉在屏幕上…</div>
+      </div>
+      <div class="meta">
+        <div class="pin-badge">📌</div>
+        <div class="time">08-15 10:22</div>
+      </div>
+    </div>
+    <div class="history-item">
+      <img class="thumb" src="assets/icons/icon-tool-screenshot.png" alt="截图历史">
+      <div style="flex:1;">
+        <div class="type">🖼️ 图片</div>
+        <div class="content">截图 2026-08-15 10:15（双击查看原图）</div>
+      </div>
+      <div class="meta"><div class="time">08-15 10:15</div></div>
+    </div>
+    <div class="history-item">
+      <div style="flex:1;">
+        <div class="type">📄 文本</div>
+        <div class="content">#3D8B80  ← 取色器复制</div>
+      </div>
+      <div class="meta"><div class="time">08-15 09:58</div></div>
+    </div>
+    <div class="history-item">
+      <div style="flex:1;">
+        <div class="type">📄 文本</div>
+        <div class="content">https://github.com/…</div>
+      </div>
+      <div class="meta"><div class="time">08-15 09:41</div></div>
+    </div>
+
+    <div style="margin-top:22px;">
+      <div class="stage-title" style="font-size:15px;color:var(--teal-deep);">空状态（贴纸插画）</div>
+      <div class="empty-state">
+        <img src="assets/icons/art-clipboard-empty.png" alt="空状态插画">
+        <h3>剪贴板空空的</h3>
+        <p>复制点什么，草泥鸽帮你记着 📋</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 贴图与边框 ============ -->
+<div class="tab-panel" id="tab-pin">
+  <div class="stage">
+    <span class="doodle doodle-circle" style="top:-8px;left:26px;"></span>
+    <div class="stage-title">置顶贴图 · 多张贴图共存</div>
+    <div class="stage-sub">拖动我 · 滚轮缩放 · 右键菜单：复制 / 点击穿透 / 保存 / 关闭</div>
+
+    <div class="pin-stage">
+      <div class="pin-demo pin-b-thin" style="top:26px;left:36px;width:190px;">
+        <img src="assets/icons/icon-tool-screenshot.png" alt="贴图1">
+        <span class="pin-title">细线边框</span>
+      </div>
+      <div class="pin-demo pin-b-glow" style="top:52px;left:300px;width:140px;">
+        <img src="assets/icons/icon-tool-colorpicker.png" alt="贴图2">
+        <span class="pin-title">发光边框</span>
+      </div>
+      <div class="pin-demo pin-b-rounded" style="top:18px;right:36px;width:160px;">
+        <img src="assets/icons/icon-tool-clipboard.png" alt="贴图3">
+        <span class="pin-title">圆角边框</span>
+      </div>
+      <div class="pin-demo pin-b-dashed" style="bottom:24px;left:190px;width:180px;">
+        <img src="assets/icons/banner-startup.png" alt="贴图4" style="height:92px;object-fit:cover;">
+        <span class="pin-title">虚线边框（手绘）</span>
+      </div>
+    </div>
+
+    <div class="stage-title" style="font-size:15px;color:var(--teal-deep);">边框预设（设置 → 外观 → 贴图边框）</div>
+    <div class="border-presets">
+      <div class="border-preset">
+        <div class="preview" style="border:1px solid rgba(44,44,44,.12);"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">无边框</div>
+      </div>
+      <div class="border-preset">
+        <div class="preview" style="border:2px solid var(--ink);"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">细线</div>
+      </div>
+      <div class="border-preset">
+        <div class="preview" style="border:5px solid var(--ink);"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">粗线</div>
+      </div>
+      <div class="border-preset">
+        <div class="preview" style="border:2.5px dashed var(--teal-deep);"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">虚线</div>
+      </div>
+      <div class="border-preset">
+        <div class="preview" style="box-shadow:0 0 16px 3px rgba(61,139,128,.5);"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">发光</div>
+      </div>
+      <div class="border-preset">
+        <div class="preview" style="border:2px solid var(--orange);border-radius:14px;"><img src="assets/icons/icon-pin.png" alt=""></div>
+        <div class="name">圆角</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div class="tab-panel" id="tab-settings">
+  <div class="stage settings-wrap" style="max-width:760px;">
+    <span class="doodle doodle-arrow" style="top:8px;right:30px;">➜</span>
+    <div class="stage-title">设置</div>
+    <div class="stage-sub">所有配置项均可自定义 · 即时生效</div>
+
+    <div class="settings-group">
+      <h4>通用</h4>
+      <div class="settings-row">
+        <div><div class="label">开机自动启动</div><div class="desc">登录后自动常驻托盘</div></div>
+        <div class="toggle on"></div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h4>热键</h4>
+      <div class="settings-row"><div class="label">截图置顶</div><span class="hotkey-input">Ctrl+Shift+A</span></div>
+      <div class="settings-row"><div class="label">粘贴板面板</div><span class="hotkey-input">Ctrl+Shift+V</span></div>
+      <div class="settings-row"><div class="label">取色器</div><span class="hotkey-input">Ctrl+Shift+C</span></div>
+      <div class="settings-row"><div class="label">显示主面板</div><span class="hotkey-input">Ctrl+Shift+P</span></div>
+      <div class="settings-row"><div class="label">关闭全部贴图</div><span class="hotkey-input">Ctrl+Shift+Q</span></div>
+      <div class="settings-row"><div class="label">清空热键</div><div class="desc">功能仅保留托盘 / 面板入口</div><span class="hotkey-input" style="color:var(--red);">— 禁用 —</span></div>
+    </div>
+
+    <div class="settings-group">
+      <h4>外观</h4>
+      <div class="settings-row">
+        <div class="label">强调色（彩铅）</div>
+        <div class="swatch-row">
+          <span class="swatch active" style="background:#3d8b80;" title="青绿"></span>
+          <span class="swatch" style="background:#d99a3d;" title="橙黄"></span>
+          <span class="swatch" style="background:#8b7bb8;" title="紫罗兰"></span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="label">贴图边框</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="hotkey-input" style="min-width:84px;">发光</span>
+          <span class="hotkey-input" style="min-width:70px;">#3D8B80</span>
+          <span class="hotkey-input" style="min-width:56px;">3px</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h4>剪贴板</h4>
+      <div class="settings-row">
+        <div><div class="label">历史上限</div><div class="desc">超出自动清理最旧的未固定条目</div></div>
+        <span class="hotkey-input" style="min-width:80px;">500 条</span>
+      </div>
+      <div class="settings-row">
+        <div><div class="label">图片体积上限</div><div class="desc">超过则不记录</div></div>
+        <span class="hotkey-input" style="min-width:80px;">20 MB</span>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h4>工具开关</h4>
+      <div class="settings-row"><div class="label">📷 截图置顶</div><div class="toggle on"></div></div>
+      <div class="settings-row"><div class="label">📋 粘贴板</div><div class="toggle on"></div></div>
+      <div class="settings-row"><div class="label">🎨 取色器</div><div class="toggle on"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 托盘 ============ -->
+<div class="tab-panel" id="tab-tray">
+  <div class="stage" style="max-width:820px;">
+    <div class="stage-title">系统托盘 · 常驻</div>
+    <div class="stage-sub">右键托盘图标弹出菜单 · 左键单击显示主面板</div>
+    <div class="tray-layout">
+      <div>
+        <div class="tray-menu">
+          <div class="item"><img src="assets/icons/icon-app.png" alt=""> 显示主面板</div>
+          <div class="sep"></div>
+          <div class="item"><img src="assets/icons/icon-tool-screenshot.png" alt=""> 截图置顶</div>
+          <div class="item"><img src="assets/icons/icon-tool-clipboard.png" alt=""> 粘贴板</div>
+          <div class="item"><img src="assets/icons/icon-tool-colorpicker.png" alt=""> 取色器</div>
+          <div class="sep"></div>
+          <div class="item"><img src="assets/icons/icon-pin.png" alt=""> 关闭全部贴图</div>
+          <div class="sep"></div>
+          <div class="item quit">✕ 退出</div>
+        </div>
+        <p style="text-align:center;color:var(--ink-faint);font-size:12px;margin-top:10px;font-family:var(--font-hand);">托盘右键菜单</p>
+      </div>
+      <div class="tray-side">
+        <div class="icon-show"><img src="assets/icons/icon-tray.png" alt="托盘图标"><p>托盘图标（16px 清晰）</p></div>
+        <div class="icon-show" style="transform:rotate(.8deg);"><img src="assets/icons/icon-app.png" alt="应用图标"><p>exe 应用图标（ICO）</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 取色器 ============ -->
+<div class="tab-panel" id="tab-picker">
+  <div class="stage" style="max-width:820px;">
+    <div class="stage-title">取色器 · 全屏取色</div>
+    <div class="stage-sub">鼠标移动实时预览 · 单击复制 HEX · Esc 取消</div>
+
+    <div class="picker-stage">
+      <div class="pseudo-screen">屏幕画面（遮罩压暗）</div>
+      <div class="magnifier">
+        <div class="grid">
+          <div style="background:#3d8b80"></div><div style="background:#2f6f66"></div><div style="background:#e8e2d8"></div>
+          <div style="background:#2c2c2c"></div><div style="background:#3d8b80"></div><div style="background:#8a8a8a"></div>
+          <div style="background:#d99a3d"></div><div style="background:#5a5a5a"></div><div style="background:#3d8b80"></div>
+        </div>
+        <div class="cross"></div>
+      </div>
+      <div class="color-panel">
+        <div class="hex-row">
+          <span class="swatch-big"></span>
+          <span class="hex">#3D8B80</span>
+        </div>
+        <div class="rgb">RGB(61, 139, 128)</div>
+        <div class="hint">单击复制 · Esc 取消</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h4>取色历史（最近 10 个）</h4>
+      <div class="swatch-row">
+        <span class="swatch" style="background:#3d8b80;" title="#3D8B80"></span>
+        <span class="swatch" style="background:#d99a3d;" title="#D99A3D"></span>
+        <span class="swatch" style="background:#8b7bb8;" title="#8B7BB8"></span>
+        <span class="swatch" style="background:#c96a5e;" title="#C96A5E"></span>
+        <span class="swatch" style="background:#6b9e62;" title="#6B9E62"></span>
+        <span class="swatch" style="background:#2c2c2c;" title="#2C2C2C"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  草泥鸽工具箱 · 手绘便当盒原型 v2 · 铅笔手绘风 × Bento Grid · 图标素材：AI 生成 + 自动抠透明
+</div>
+
+<script>
+// 标签切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+// 贴图拖动
+document.querySelectorAll('.pin-demo').forEach(pin => {
+  pin.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const stage = pin.parentElement.getBoundingClientRect();
+    const offX = e.clientX - pin.getBoundingClientRect().left;
+    const offY = e.clientY - pin.getBoundingClientRect().top;
+    const move = ev => {
+      pin.style.left = (ev.clientX - stage.left - offX) + 'px';
+      pin.style.top = (ev.clientY - stage.top - offY) + 'px';
+    };
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+});
+// 手绘开关
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+// 色板选中
+document.querySelectorAll('.swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    s.parentElement.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
